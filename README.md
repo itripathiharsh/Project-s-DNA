@@ -4,7 +4,7 @@
 
 Project DNA is a production-grade static codebase analysis and architectural reasoning platform. It parses source files into detailed Abstract Syntax Tree (AST) entity graphs, correlates structural metrics with Git operational history, and runs deterministic reasoning algorithms to discover structural risks, design cycles, knowledge siloing, and AI-driven refactoring paths.
 
-![Project DNA Banner](./docs/project_dna_banner.png)
+
 
 ---
 
