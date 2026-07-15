@@ -62,6 +62,7 @@ export default function Sidebar() {
       <div className="px-gutter mb-4">
         <button
           onClick={() => {
+            localStorage.removeItem('skip_onboarding');
             reset();
             navigate('/onboarding');
           }}

@@ -11,7 +11,7 @@ export default function SelectRepository() {
   const { setRepoPath, data, loading } = useAnalysis();
 
   useEffect(() => {
-    if (!loading && data) {
+    if (!loading && data && localStorage.getItem('skip_onboarding') === 'true') {
       navigate('/dashboard');
     }
   }, [data, loading, navigate]);
@@ -106,8 +106,8 @@ export default function SelectRepository() {
                 </div>
                 {viaUrl && (
                   <div className="flex items-center gap-2 p-3 bg-surface-container border border-border-subtle rounded">
-                    <span className="material-symbols-outlined text-signal-amber text-[16px]">info</span>
-                    <span className="font-body-sm text-on-surface-variant">URL cloning is planned. For this build, point to a path the backend can read directly.</span>
+                    <span className="material-symbols-outlined text-signal-emerald text-[16px]">info</span>
+                    <span className="font-body-sm text-on-surface-variant">GitHub URL cloning is fully supported! Enter a public repository HTTPS URL to analyze it on our Render cluster.</span>
                   </div>
                 )}
               </form>
@@ -136,7 +136,15 @@ export default function SelectRepository() {
             <span>{path.trim() ? '1 repository selected.' : 'No repository selected yet.'}</span>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/dashboard')} className="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors">Skip</button>
+            <button
+              onClick={() => {
+                localStorage.setItem('skip_onboarding', 'true');
+                navigate('/dashboard');
+              }}
+              className="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors"
+            >
+              Skip
+            </button>
             <button onClick={next} disabled={!path.trim()} className="bg-primary hover:bg-primary-container text-on-primary px-6 h-8 font-body-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
               Next: Configure
               <span className="material-symbols-outlined text-[16px]">arrow_forward</span>

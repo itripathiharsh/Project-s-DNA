@@ -63,11 +63,23 @@ export default function AnalysisComplete() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full justify-center pt-6">
-            <button onClick={() => navigate('/graph')} className="btn-primary-lg">
+            <button
+              onClick={() => {
+                localStorage.setItem('skip_onboarding', 'true');
+                navigate('/graph');
+              }}
+              className="btn-primary-lg"
+            >
               <span className="material-symbols-outlined">rocket_launch</span>
               Enter Graph Workspace
             </button>
-            <button onClick={() => navigate('/dashboard')} className="btn-secondary">
+            <button
+              onClick={() => {
+                localStorage.setItem('skip_onboarding', 'true');
+                navigate('/dashboard');
+              }}
+              className="btn-secondary"
+            >
               <span className="material-symbols-outlined">dashboard</span>
               View Dashboard
             </button>
