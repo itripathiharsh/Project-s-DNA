@@ -8,7 +8,7 @@ export default function SelectRepository() {
   const [path, setPath] = useState('');
   const [viaUrl, setViaUrl] = useState(false);
   const navigate = useNavigate();
-  const { setRepoPath, data, loading } = useAnalysis();
+  const { setRepoPath, data, loading, loadLatest } = useAnalysis();
 
   useEffect(() => {
     if (!loading && data && localStorage.getItem('skip_onboarding') === 'true') {
@@ -137,8 +137,11 @@ export default function SelectRepository() {
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => {
+              onClick={async () => {
                 localStorage.setItem('skip_onboarding', 'true');
+                if (loadLatest) {
+                  await loadLatest();
+                }
                 navigate('/dashboard');
               }}
               className="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors"

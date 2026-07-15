@@ -9,22 +9,26 @@ export function AnalysisProvider({ children }) {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true); // Start loading to check for cached analysis first
 
-  useEffect(() => {
-    async function loadLatest() {
-      try {
-        const result = await getLatestAnalysis();
-        setData(result);
-        if (result.repository?.path) {
-          setRepoPath(result.repository.path);
-        }
-      } catch (err) {
-        console.log('No existing active analysis cached on backend:', err.message || err);
-      } finally {
-        setLoading(false);
+  const loadLatest = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getLatestAnalysis();
+      setData(result);
+      if (result.repository?.path) {
+        setRepoPath(result.repository.path);
       }
+      return result;
+    } catch (err) {
+      console.log('No existing active analysis cached on backend:', err.message || err);
+      setData(null);
+    } finally {
+      setLoading(false);
     }
-    loadLatest();
   }, []);
+
+  useEffect(() => {
+    loadLatest();
+  }, [loadLatest]);
 
   const runAnalysis = useCallback(async (path) => {
     if (!path) return;
@@ -53,7 +57,7 @@ export function AnalysisProvider({ children }) {
 
   return (
     <AnalysisContext.Provider
-      value={{ repoPath, data, error, loading, runAnalysis, reset, setRepoPath }}
+      value={{ repoPath, data, error, loading, runAnalysis, reset, setRepoPath, loadLatest }}
     >
       {children}
     </AnalysisContext.Provider>
