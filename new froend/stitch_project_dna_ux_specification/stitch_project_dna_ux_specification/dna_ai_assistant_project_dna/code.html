@@ -1,0 +1,392 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Project DNA | AI Assistant</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            font-size: 18px;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262626;
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #353534;
+        }
+        .pulse-neural {
+            animation: neural-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes neural-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .5; transform: scale(1.2); }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(208, 188, 255, 0.05), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#d0bcff",
+                        "tertiary-container": "#ca801e",
+                        "primary-fixed-dim": "#d0bcff",
+                        "on-primary": "#3c0091",
+                        "tertiary-fixed-dim": "#ffb869",
+                        "surface-bright": "#3a3939",
+                        "text-muted": "#A3A3A3",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "surface-variant": "#353534",
+                        "on-secondary-container": "#b7b5b4",
+                        "inverse-on-surface": "#313030",
+                        "surface": "#131313",
+                        "error-container": "#93000a",
+                        "surface-container": "#201f1f",
+                        "on-error-container": "#ffdad6",
+                        "signal-amber": "#F59E0B",
+                        "on-tertiary-fixed": "#2c1700",
+                        "on-background": "#e5e2e1",
+                        "signal-rose": "#F43F5E",
+                        "primary-container": "#a078ff",
+                        "on-error": "#690005",
+                        "on-tertiary-container": "#3f2300",
+                        "secondary": "#c8c6c5",
+                        "on-primary-fixed-variant": "#5516be",
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#6d3bd7",
+                        "surface-tint": "#d0bcff",
+                        "surface-container-high": "#2a2a2a",
+                        "secondary-fixed": "#e5e2e1",
+                        "signal-cyan": "#06B6D4",
+                        "on-secondary-fixed-variant": "#474746",
+                        "background": "#131313",
+                        "surface-container-highest": "#353534",
+                        "on-surface-variant": "#cbc3d7",
+                        "on-surface": "#e5e2e1",
+                        "on-tertiary-fixed-variant": "#673d00",
+                        "secondary-container": "#474746",
+                        "surface-dim": "#131313",
+                        "on-primary-container": "#340080",
+                        "outline": "#958ea0",
+                        "border-subtle": "#262626",
+                        "on-primary-fixed": "#23005c",
+                        "on-secondary-fixed": "#1b1b1c",
+                        "tertiary-fixed": "#ffdcbb",
+                        "tertiary": "#ffb869",
+                        "surface-container-low": "#1c1b1b",
+                        "on-secondary": "#303030",
+                        "surface-container-lowest": "#0e0e0e",
+                        "signal-emerald": "#10B981",
+                        "on-tertiary": "#482900",
+                        "outline-variant": "#494454",
+                        "inverse-surface": "#e5e2e1",
+                        "primary-fixed": "#e9ddff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "12px",
+                        "sidebar-width": "260px",
+                        "row-height-dense": "28px",
+                        "unit": "4px",
+                        "inspector-width": "320px",
+                        "row-height-standard": "36px"
+                    },
+                    "fontFamily": {
+                        "code-sm": ["JetBrains Mono"],
+                        "label-caps": ["Inter"],
+                        "body-md": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "code-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-md": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden selection:bg-primary selection:text-on-primary">
+<div class="flex h-screen w-full">
+<!-- Main Sidebar (Left) -->
+<aside class="flex flex-col h-full border-r border-border-subtle w-sidebar-width bg-surface-container-low shrink-0">
+<div class="px-gutter py-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1">account_tree</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">Project DNA</h1>
+<p class="font-code-sm text-code-sm text-text-muted">v2.4.0-stable</p>
+</div>
+</div>
+<div class="flex-1 py-4 overflow-y-auto space-y-1">
+<!-- Nav Items (from JSON mapping) -->
+<nav class="space-y-0.5">
+<a class="flex items-center gap-3 bg-surface-container-highest text-primary font-body-md py-row-height-dense px-gutter border-l-2 border-primary" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant py-row-height-dense px-gutter transition-colors" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Explorer</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant py-row-height-dense px-gutter transition-colors" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span>Graph</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant py-row-height-dense px-gutter transition-colors" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span>Intelligence</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant py-row-height-dense px-gutter transition-colors" href="#">
+<span class="material-symbols-outlined">security</span>
+<span>Risk Center</span>
+</a>
+</nav>
+</div>
+<div class="p-gutter border-t border-border-subtle">
+<button class="w-full py-2 bg-primary text-on-primary font-bold rounded hover:opacity-90 transition-opacity">
+                    New Branch
+                </button>
+</div>
+</aside>
+<!-- Main Workspace (Center - Graph/Grid Content) -->
+<main class="flex-1 relative bg-surface-container-lowest overflow-hidden flex flex-col">
+<!-- Top Nav -->
+<header class="flex items-center justify-between px-gutter w-full h-row-height-standard bg-surface border-b border-border-subtle shrink-0">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md font-black text-on-surface">Main</span>
+<nav class="flex gap-4">
+<a class="text-on-surface-variant font-body-md hover:text-on-surface transition-colors" href="#">Branches</a>
+<a class="text-on-surface-variant font-body-md hover:text-on-surface transition-colors" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<input class="bg-surface-container h-7 px-3 text-body-sm border-none ring-1 ring-border-subtle rounded-sm w-64 focus:ring-primary focus:outline-none" placeholder="Search architecture..." type="text">
+</div>
+<div class="flex gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary">terminal</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Workspace Content (Visualization Layer) -->
+<div class="flex-1 relative overflow-hidden">
+<!-- ThreeJS/Shader Placeholder for Background -->
+
+<!-- Floating Architecture Nodes Overlay -->
+<div class="absolute inset-0 pointer-events-none p-10 grid grid-cols-4 grid-rows-3 gap-8">
+<!-- Sample Graph Card -->
+<div class="pointer-events-auto col-span-1 row-span-1 border border-border-subtle bg-surface-container/60 backdrop-blur-xl p-4 flex flex-col justify-between group hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start">
+<span class="font-code-sm text-primary">@dna/core-engine</span>
+<span class="text-[10px] bg-signal-emerald/20 text-signal-emerald px-1.5 py-0.5 rounded">STABLE</span>
+</div>
+<div class="mt-4">
+<div class="h-16 w-full opacity-50">
+
+</div>
+</div>
+<div class="flex justify-between mt-4">
+<span class="font-code-sm text-on-surface-variant">Complexity: 42</span>
+<span class="font-code-sm text-on-surface-variant">Deps: 12</span>
+</div>
+</div>
+<!-- Node 2 -->
+<div class="pointer-events-auto col-start-3 col-span-1 row-span-1 border border-border-subtle bg-surface-container/60 backdrop-blur-xl p-4 flex flex-col justify-between group hover:border-primary/50 transition-all">
+<div class="flex justify-between items-start">
+<span class="font-code-sm text-signal-amber">@dna/auth-gateway</span>
+<span class="text-[10px] bg-signal-amber/20 text-signal-amber px-1.5 py-0.5 rounded">DEPRECATED</span>
+</div>
+<div class="mt-4">
+<div class="h-16 w-full opacity-30">
+
+</div>
+</div>
+<div class="flex justify-between mt-4">
+<span class="font-code-sm text-on-surface-variant">Vulnerabilities: 3</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- DNA AI ASSISTANT SIDEBAR (THE TASK) -->
+<aside class="w-inspector-width h-screen bg-surface-container-low border-l border-border-subtle flex flex-col shrink-0 relative z-50" id="ai-sidebar">
+<!-- Header -->
+<div class="p-gutter h-row-height-standard flex items-center justify-between border-b border-border-subtle shrink-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1">psychology</span>
+<span class="font-headline-md text-headline-md font-bold tracking-tight">DNA AI</span>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-highest border border-border-subtle">
+<div class="w-2 h-2 rounded-full bg-signal-emerald pulse-neural"></div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">ANALYZING</span>
+</div>
+</div>
+<!-- Context Indicator -->
+<div class="px-gutter py-1.5 bg-surface-container border-b border-border-subtle flex items-center gap-2">
+<span class="font-code-sm text-[10px] text-text-muted">CONTEXT:</span>
+<span class="font-code-sm text-[10px] text-primary bg-primary/10 px-1.5 rounded">@dna/core-engine</span>
+<span class="material-symbols-outlined text-[12px] text-on-surface-variant cursor-pointer ml-auto">close</span>
+</div>
+<!-- Conversation Feed -->
+<div class="flex-1 overflow-y-auto p-gutter space-y-6" id="ai-feed">
+<!-- Query 1 -->
+<div class="space-y-2">
+<div class="flex gap-2">
+<div class="w-5 h-5 rounded-full border border-border-subtle bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[12px]">person</span>
+</div>
+<div class="font-body-sm text-on-surface-variant">"Analyze dependency cycles in the core-engine."</div>
+</div>
+<!-- Response 1 -->
+<div class="flex gap-2">
+<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[12px] text-on-primary" style="font-variation-settings: 'FILL' 1">psychology</span>
+</div>
+<div class="flex-1 space-y-3">
+<p class="font-body-sm leading-relaxed">I found 2 circular dependencies in the <code class="font-code-sm text-primary">/src/middleware</code> directory impacting boot latency.</p>
+<!-- Inline Component: Dependency Spread -->
+<div class="bg-surface-container-lowest border border-border-subtle p-2 rounded relative overflow-hidden">
+<div class="shimmer absolute inset-0"></div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-label-caps text-label-caps text-text-muted">DEPENDENCY SPREAD</span>
+<span class="font-code-sm text-[10px] text-signal-rose">CRITICAL</span>
+</div>
+<div class="flex items-center justify-between gap-1 h-8">
+<div class="flex-1 bg-surface-container h-1 rounded-full overflow-hidden">
+<div class="bg-signal-rose h-full w-[80%]"></div>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface">82%</span>
+</div>
+<div class="font-code-sm text-[10px] text-text-muted mt-1 italic">Affected modules: Auth, Logger, Trace.</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Query 2 -->
+<div class="space-y-2">
+<div class="flex gap-2">
+<div class="w-5 h-5 rounded-full border border-border-subtle bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[12px]">person</span>
+</div>
+<div class="font-body-sm text-on-surface-variant">"Suggest refactor for the Singleton in @auth."</div>
+</div>
+<!-- Response 2 -->
+<div class="flex gap-2">
+<div class="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[12px] text-on-primary" style="font-variation-settings: 'FILL' 1">psychology</span>
+</div>
+<div class="flex-1 space-y-3">
+<!-- Complexity Block -->
+<div class="grid grid-cols-2 gap-2">
+<div class="bg-surface-container p-2 rounded">
+<div class="text-[10px] font-label-caps text-text-muted">COMPLEXITY</div>
+<div class="font-code-md text-code-md text-on-surface">O(N log N)</div>
+</div>
+<div class="bg-surface-container p-2 rounded">
+<div class="text-[10px] font-label-caps text-text-muted">MEMORY</div>
+<div class="font-code-md text-code-md text-on-surface">~42MB</div>
+</div>
+</div>
+<!-- Refactor Suggestion -->
+<div class="border border-border-subtle rounded overflow-hidden">
+<div class="bg-surface-container px-2 py-1 flex items-center justify-between">
+<span class="font-code-sm text-code-sm">auth_service.ts</span>
+<button class="font-label-caps text-[9px] bg-primary text-on-primary px-2 rounded hover:opacity-80 transition-opacity">VIEW DIFF</button>
+</div>
+<div class="p-2 bg-surface-container-lowest font-code-sm text-[11px] leading-tight text-on-surface-variant">
+<div class="text-signal-rose">- constructor() { ... }</div>
+<div class="text-signal-emerald">+ static async init() { ... }</div>
+<div class="text-on-surface opacity-50 mt-1">// Migration to Factory Pattern recommended.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Input Area -->
+<div class="p-gutter border-t border-border-subtle bg-surface-container-low shrink-0">
+<div class="relative mb-3">
+<textarea class="w-full bg-surface-container-lowest border-border-subtle text-body-sm focus:ring-1 focus:ring-primary focus:border-primary rounded min-h-[80px] p-2 resize-none placeholder:text-text-muted" placeholder="Ask architecture query..."></textarea>
+<div class="absolute bottom-2 right-2 flex gap-1">
+<button class="p-1 hover:bg-surface-variant rounded text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">attach_file</span>
+</button>
+<button class="p-1 bg-primary text-on-primary rounded shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-[16px]">send</span>
+</button>
+</div>
+</div>
+<!-- Action Modes -->
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+<button class="flex items-center gap-1.5 px-2 py-1 bg-surface-container-highest border border-primary/30 rounded text-[10px] font-label-caps text-primary shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[14px]">search</span>
+                        SEMANTIC SEARCH
+                    </button>
+<button class="flex items-center gap-1.5 px-2 py-1 hover:bg-surface-container-highest border border-border-subtle rounded text-[10px] font-label-caps text-on-surface-variant shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+                        ACTION MODE
+                    </button>
+<button class="flex items-center gap-1.5 px-2 py-1 hover:bg-surface-container-highest border border-border-subtle rounded text-[10px] font-label-caps text-on-surface-variant shrink-0 transition-colors">
+<span class="material-symbols-outlined text-[14px]">terminal</span>
+                        CLI
+                    </button>
+</div>
+</div>
+<!-- Footer Stats -->
+<div class="px-gutter h-row-height-dense flex items-center justify-between bg-surface-container-lowest border-t border-border-subtle">
+<span class="font-code-sm text-[10px] text-text-muted">TOKEN USAGE: 12%</span>
+<span class="font-code-sm text-[10px] text-text-muted">LATENCY: 42ms</span>
+</div>
+</aside>
+</div>
+<script>
+        // Simple micro-interaction for input height adjustments or scroll to bottom
+        const feed = document.getElementById('ai-feed');
+        feed.scrollTop = feed.scrollHeight;
+
+        // Simulate typing animation logic for UI presentation
+        document.querySelector('textarea').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                // Add message logic could go here
+                e.target.value = '';
+            }
+        });
+    </script>
+</body></html>

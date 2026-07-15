@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        /* Custom scrollbar for IDE feel */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0d0d0d; }
+        ::-webkit-scrollbar-thumb { background: #262626; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #353534; }
+
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-subtle 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-low": "#1c1b1b",
+                      "inverse-surface": "#e5e2e1",
+                      "surface-variant": "#353534",
+                      "on-primary-container": "#340080",
+                      "on-secondary-fixed": "#1b1b1c",
+                      "tertiary-fixed-dim": "#ffb869",
+                      "error": "#ffb4ab",
+                      "primary-container": "#a078ff",
+                      "border-subtle": "#262626",
+                      "surface-container-highest": "#353534",
+                      "on-tertiary-fixed-variant": "#673d00",
+                      "on-secondary-container": "#b7b5b4",
+                      "signal-cyan": "#06B6D4",
+                      "on-secondary": "#303030",
+                      "on-error-container": "#ffdad6",
+                      "surface-container": "#201f1f",
+                      "secondary-container": "#474746",
+                      "primary": "#d0bcff",
+                      "signal-rose": "#F43F5E",
+                      "surface-bright": "#3a3939",
+                      "on-surface-variant": "#cbc3d7",
+                      "secondary": "#c8c6c5",
+                      "text-muted": "#A3A3A3",
+                      "on-tertiary-fixed": "#2c1700",
+                      "on-primary": "#3c0091",
+                      "surface-container-lowest": "#0e0e0e",
+                      "on-tertiary-container": "#3f2300",
+                      "inverse-on-surface": "#313030",
+                      "background": "#131313",
+                      "surface-dim": "#131313",
+                      "error-container": "#93000a",
+                      "outline-variant": "#494454",
+                      "outline": "#958ea0",
+                      "on-surface": "#e5e2e1",
+                      "primary-fixed-dim": "#d0bcff",
+                      "signal-emerald": "#10B981",
+                      "on-primary-fixed": "#23005c",
+                      "tertiary-fixed": "#ffdcbb",
+                      "secondary-fixed": "#e5e2e1",
+                      "on-primary-fixed-variant": "#5516be",
+                      "tertiary-container": "#ca801e",
+                      "surface-container-high": "#2a2a2a",
+                      "signal-amber": "#F59E0B",
+                      "on-error": "#690005",
+                      "surface-tint": "#d0bcff",
+                      "on-secondary-fixed-variant": "#474746",
+                      "primary-fixed": "#e9ddff",
+                      "tertiary": "#ffb869",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "inverse-primary": "#6d3bd7",
+                      "on-tertiary": "#482900",
+                      "on-background": "#e5e2e1",
+                      "surface": "#131313"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sidebar-width": "260px",
+                      "unit": "4px",
+                      "row-height-standard": "36px",
+                      "inspector-width": "320px",
+                      "gutter": "12px",
+                      "row-height-dense": "28px"
+              },
+              "fontFamily": {
+                      "label-caps": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "code-sm": ["JetBrains Mono"],
+                      "body-md": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "code-md": ["JetBrains Mono"],
+                      "body-sm": ["Inter"]
+              },
+              "fontSize": {
+                      "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                      "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "code-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-md": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="bg-surface-container-low flex justify-between items-center w-full px-gutter h-row-height-standard border-b border-border-subtle fixed top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">DNA Platform</span>
+<div class="hidden md:flex items-center gap-6 ml-6">
+<a class="font-body-md text-body-md text-on-surface-variant hover:bg-surface-variant transition-colors px-2 py-1 cursor-pointer" href="#">Dashboard</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:bg-surface-variant transition-colors px-2 py-1 cursor-pointer" href="#">Deployments</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:bg-surface-variant transition-colors px-2 py-1 cursor-pointer" href="#">Monitoring</a>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="bg-surface-container-high px-3 py-1 text-on-surface-variant font-label-caps text-label-caps hover:bg-surface-variant transition-all cursor-pointer">Status</button>
+<button class="bg-primary-container text-on-primary-container px-3 py-1 font-label-caps text-label-caps hover:opacity-80 transition-all cursor-pointer">Deploy</button>
+<span class="material-symbols-outlined text-on-surface-variant p-1 cursor-pointer hover:bg-surface-variant transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant p-1 cursor-pointer hover:bg-surface-variant transition-colors" data-icon="settings">settings</span>
+</div>
+</nav>
+<div class="flex flex-1 pt-row-height-standard">
+<!-- SideNavBar -->
+<aside class="bg-surface-container border-r border-border-subtle h-full w-sidebar-width flex flex-col py-4 hidden md:flex shrink-0">
+<div class="px-4 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-[20px]" data-icon="account_tree" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md font-black text-on-surface leading-tight">Project DNA</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant opacity-60">v2.4.0-stable</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<div class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer font-label-caps text-label-caps group">
+<span class="material-symbols-outlined text-[18px]" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer font-label-caps text-label-caps group">
+<span class="material-symbols-outlined text-[18px]" data-icon="folder_open">folder_open</span>
+<span>Explorer</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-2 bg-surface-container-highest text-primary border-l-2 border-primary transition-all cursor-pointer font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[18px]" data-icon="account_tree">account_tree</span>
+<span>Graph</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer font-label-caps text-label-caps group">
+<span class="material-symbols-outlined text-[18px]" data-icon="psychology">psychology</span>
+<span>Intelligence</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer font-label-caps text-label-caps group">
+<span class="material-symbols-outlined text-[18px]" data-icon="warning">warning</span>
+<span>Risk</span>
+</div>
+</nav>
+<div class="mt-auto px-4 flex flex-col gap-4">
+<button class="w-full bg-surface-container-high border border-border-subtle py-2 text-on-surface font-label-caps text-label-caps hover:bg-surface-variant transition-colors">
+                    Switch Project
+                </button>
+<div class="flex flex-col gap-2 border-t border-border-subtle pt-4 pb-2">
+<div class="flex items-center gap-3 px-0 py-1 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[16px]" data-icon="help">help</span>
+<span>Docs</span>
+</div>
+<div class="flex items-center gap-3 px-0 py-1 text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[16px]" data-icon="contact_support">contact_support</span>
+<span>Support</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Stage: Graph Workspace Empty State -->
+<main class="flex-1 relative overflow-hidden bg-surface-container-lowest flex flex-col items-center justify-center p- gutter">
+<!-- Subtle Background Ghosting Graph -->
+<div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none overflow-hidden opacity-20">
+<svg class="animate-pulse-slow" fill="none" height="800" viewbox="0 0 1200 800" width="1200" xmlns="http://www.w3.org/2000/svg">
+<!-- Connections -->
+<path d="M400 400 L600 200" stroke="#262626" stroke-width="1.5"></path>
+<path d="M400 400 L600 600" stroke="#262626" stroke-width="1.5"></path>
+<path d="M600 200 L800 150" stroke="#262626" stroke-width="1.5"></path>
+<path d="M600 200 L800 250" stroke="#262626" stroke-width="1.5"></path>
+<path d="M600 600 L800 550" stroke="#262626" stroke-width="1.5"></path>
+<path d="M600 600 L800 650" stroke="#262626" stroke-width="1.5"></path>
+<path d="M800 250 L1000 300" stroke="#262626" stroke-width="1.5"></path>
+<!-- Nodes -->
+<circle cx="400" cy="400" fill="#161616" r="12" stroke="#353534" stroke-width="2"></circle>
+<circle cx="600" cy="200" fill="#161616" r="10" stroke="#353534" stroke-width="2"></circle>
+<circle cx="600" cy="600" fill="#161616" r="10" stroke="#353534" stroke-width="2"></circle>
+<circle cx="800" cy="150" fill="#161616" r="8" stroke="#353534" stroke-width="2"></circle>
+<circle cx="800" cy="250" fill="#161616" r="8" stroke="#353534" stroke-width="2"></circle>
+<circle cx="800" cy="550" fill="#161616" r="8" stroke="#353534" stroke-width="2"></circle>
+<circle cx="800" cy="650" fill="#161616" r="8" stroke="#353534" stroke-width="2"></circle>
+<circle cx="1000" cy="300" fill="#161616" r="8" stroke="#353534" stroke-width="2"></circle>
+<!-- Floating Code Fragments -->
+<text fill="#262626" font-family="JetBrains Mono" font-size="12" x="420" y="390">main.go</text>
+<text fill="#262626" font-family="JetBrains Mono" font-size="12" x="620" y="190">internal/pkg</text>
+<text fill="#262626" font-family="JetBrains Mono" font-size="12" x="820" y="240">config.yaml</text>
+</svg>
+</div>
+<!-- Content Overlay -->
+<div class="relative z-10 max-w-md w-full flex flex-col items-center text-center">
+<div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mb-6 border border-border-subtle group hover:border-primary transition-colors duration-500">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary transition-colors" data-icon="cloud_off">cloud_off</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">No Repository Connected</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8 px-8">
+                    Connect a source control repository to begin mapping your architecture dependencies and system flows.
+                </p>
+<div class="flex flex-col sm:flex-row gap-3 w-full">
+<button class="flex-1 bg-primary text-on-primary font-label-caps text-label-caps py-3 rounded-lg flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="add_link">add_link</span>
+                        Connect Repository
+                    </button>
+<button class="flex-1 bg-surface-container-high text-on-surface font-label-caps text-label-caps py-3 rounded-lg border border-border-subtle flex items-center justify-center gap-2 hover:bg-surface-variant active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span>
+                        View Sample Project
+                    </button>
+</div>
+<div class="mt-12 pt-8 border-t border-border-subtle w-full grid grid-cols-2 gap-4">
+<div class="text-left">
+<div class="font-label-caps text-label-caps text-primary mb-1">Supported Hosts</div>
+<div class="flex gap-3 opacity-60">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="material-symbols-outlined" data-icon="cloud">cloud</span>
+<span class="material-symbols-outlined" data-icon="dns">dns</span>
+</div>
+</div>
+<div class="text-left">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-1">Quick Shortcut</div>
+<div class="flex items-center gap-1 font-code-sm text-code-sm text-muted">
+<kbd class="px-1.5 py-0.5 bg-surface-container-high rounded border border-border-subtle">Ctrl</kbd>
+<span>+</span>
+<kbd class="px-1.5 py-0.5 bg-surface-container-high rounded border border-border-subtle">K</kbd>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Inspector (Right) -->
+<aside class="bg-surface-container border-l border-border-subtle h-full w-inspector-width hidden xl:flex flex-col shrink-0">
+<div class="h-row-height-standard flex items-center px-gutter border-b border-border-subtle justify-between">
+<span class="font-label-caps text-label-caps text-on-surface">Properties</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant cursor-pointer" data-icon="close">close</span>
+</div>
+<div class="p-gutter flex flex-col gap-6">
+<div class="space-y-4">
+<div class="h-4 bg-surface-container-high w-3/4 rounded animate-pulse"></div>
+<div class="h-3 bg-surface-container-high w-full rounded animate-pulse"></div>
+<div class="h-3 bg-surface-container-high w-5/6 rounded animate-pulse"></div>
+</div>
+<div class="pt-6 border-t border-border-subtle">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-3 uppercase opacity-50">Context Metadata</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center py-1">
+<span class="font-code-sm text-code-sm text-muted">status</span>
+<span class="px-2 py-0.5 bg-error-container text-error font-code-sm text-code-sm rounded">Disconnected</span>
+</div>
+<div class="flex justify-between items-center py-1">
+<span class="font-code-sm text-code-sm text-muted">workspace</span>
+<span class="font-code-sm text-code-sm text-on-surface">graph-stage-01</span>
+</div>
+<div class="flex justify-between items-center py-1">
+<span class="font-code-sm text-code-sm text-muted">engine</span>
+<span class="font-code-sm text-code-sm text-on-surface">v2.4.0-stable</span>
+</div>
+</div>
+</div>
+<div class="mt-4 p-4 bg-surface-container-low border border-border-subtle rounded-lg">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-signal-amber text-[18px]" data-icon="lightbulb">lightbulb</span>
+<div>
+<div class="font-body-sm text-body-sm text-on-surface font-semibold mb-1">Getting Started</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                                You can link a GitHub or GitLab repository to automatically generate a dependency graph of your microservices.
+                            </div>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+<!-- Micro-interaction script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const main = document.querySelector('main');
+            const svg = main.querySelector('svg');
+
+            // Mouse tracking for subtle background movement
+            main.addEventListener('mousemove', (e) => {
+                const moveX = (e.clientX - window.innerWidth / 2) / 100;
+                const moveY = (e.clientY - window.innerHeight / 2) / 100;
+                svg.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+
+            // Handle hover scaling for nodes
+            const nodes = svg.querySelectorAll('circle');
+            nodes.forEach(node => {
+                node.style.transition = 'all 0.3s ease';
+                node.addEventListener('mouseenter', () => {
+                    node.setAttribute('r', parseInt(node.getAttribute('r')) + 2);
+                    node.style.stroke = '#d0bcff';
+                });
+                node.addEventListener('mouseleave', () => {
+                    node.setAttribute('r', parseInt(node.getAttribute('r')) - 2);
+                    node.style.stroke = '#353534';
+                });
+            });
+        });
+    </script>
+</body></html>

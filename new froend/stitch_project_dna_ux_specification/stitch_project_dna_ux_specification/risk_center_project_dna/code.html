@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Risk Center - Project DNA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "signal-cyan": "#06B6D4",
+                      "error-container": "#93000a",
+                      "tertiary-fixed": "#ffdcbb",
+                      "on-primary": "#3c0091",
+                      "error": "#ffb4ab",
+                      "background": "#131313",
+                      "surface-tint": "#d0bcff",
+                      "surface-container-high": "#2a2a2a",
+                      "primary-fixed": "#e9ddff",
+                      "on-secondary-fixed": "#1b1b1c",
+                      "surface-container-highest": "#353534",
+                      "signal-rose": "#F43F5E",
+                      "on-tertiary-container": "#3f2300",
+                      "surface-container-low": "#1c1b1b",
+                      "text-muted": "#A3A3A3",
+                      "surface-container": "#201f1f",
+                      "surface-variant": "#353534",
+                      "surface-container-lowest": "#0e0e0e",
+                      "inverse-surface": "#e5e2e1",
+                      "signal-emerald": "#10B981",
+                      "tertiary-fixed-dim": "#ffb869",
+                      "surface-bright": "#3a3939",
+                      "on-primary-container": "#340080",
+                      "primary-fixed-dim": "#d0bcff",
+                      "secondary-fixed": "#e5e2e1",
+                      "primary-container": "#a078ff",
+                      "on-tertiary-fixed": "#2c1700",
+                      "signal-amber": "#F59E0B",
+                      "surface": "#131313",
+                      "on-tertiary": "#482900",
+                      "outline": "#958ea0",
+                      "secondary-container": "#474746",
+                      "surface-dim": "#131313",
+                      "on-tertiary-fixed-variant": "#673d00",
+                      "on-surface": "#e5e2e1",
+                      "on-secondary-container": "#b7b5b4",
+                      "on-error": "#690005",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "border-subtle": "#262626",
+                      "on-error-container": "#ffdad6",
+                      "on-primary-fixed-variant": "#5516be",
+                      "on-secondary-fixed-variant": "#474746",
+                      "outline-variant": "#494454",
+                      "on-background": "#e5e2e1",
+                      "tertiary-container": "#ca801e",
+                      "inverse-primary": "#6d3bd7",
+                      "on-primary-fixed": "#23005c",
+                      "primary": "#d0bcff",
+                      "on-surface-variant": "#cbc3d7",
+                      "tertiary": "#ffb869",
+                      "on-secondary": "#303030",
+                      "inverse-on-surface": "#313030",
+                      "secondary": "#c8c6c5"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "inspector-width": "320px",
+                      "row-height-standard": "36px",
+                      "row-height-dense": "28px",
+                      "sidebar-width": "260px",
+                      "gutter": "12px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "code-md": [
+                              "JetBrains Mono"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-sm": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-md": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "12px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+        /* Scrollbar styles for dark mode IDE feel */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: theme('colors.background'); }
+        ::-webkit-scrollbar-thumb { background: theme('colors.surface-container-high'); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: theme('colors.surface-variant'); }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden antialiased bg-background">
+<!-- Sidebar -->
+<nav class="bg-surface-container-low border-r border-border-subtle fixed left-0 top-0 h-full w-sidebar-width flex flex-col h-full py-4 shrink-0 z-20 hidden md:flex">
+<!-- Brand / Header -->
+<div class="px-gutter mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">dataset</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Project DNA</h1>
+<div class="font-code-sm text-code-sm text-text-muted mt-0.5">v2.4.0-stable</div>
+</div>
+</div>
+<!-- Main Navigation -->
+<div class="flex-1 overflow-y-auto px-3 space-y-1">
+<div class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT cursor-pointer duration-150 text-text-muted hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-caps text-label-caps">Dashboard</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT cursor-pointer duration-150 text-text-muted hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-label-caps text-label-caps">Explorer</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT cursor-pointer duration-150 text-text-muted hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-label-caps text-label-caps">Graph</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT cursor-pointer duration-150 text-text-muted hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-caps text-label-caps">Intelligence</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT cursor-pointer duration-150 bg-surface-container-highest text-primary border-l-2 border-primary">
+<span class="material-symbols-outlined">security</span>
+<span class="font-label-caps text-label-caps">Risk Center</span>
+</div>
+</div>
+<div class="px-3 mt-6 mb-4">
+<button class="w-full bg-primary text-on-primary font-label-caps text-label-caps py-2 rounded hover:bg-primary-fixed transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                New Module
+            </button>
+</div>
+<!-- Footer Navigation -->
+<div class="mt-auto px-3 space-y-1">
+<div class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT cursor-pointer duration-150 text-text-muted hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-caps text-label-caps">Search</span>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT cursor-pointer duration-150 text-text-muted hover:bg-surface-container transition-all">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col min-w-0 md:ml-sidebar-width bg-background">
+<!-- Top Nav (Mobile & Breadcrumbs) -->
+<header class="bg-background border-b border-border-subtle flex justify-between items-center w-full px-gutter h-row-height-standard shrink-0 sticky top-0 z-10">
+<div class="flex items-center gap-2 font-code-sm text-code-sm text-text-muted">
+<span class="text-on-surface hover:text-primary cursor-pointer transition-colors">Project DNA</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary">Risk Center</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted hover:text-on-surface cursor-pointer transition-colors text-[18px]">notifications</span>
+<span class="material-symbols-outlined text-text-muted hover:text-on-surface cursor-pointer transition-colors text-[18px]">help</span>
+</div>
+<button class="bg-primary text-on-primary font-label-caps text-label-caps px-3 py-1 rounded hover:bg-primary-fixed transition-colors h-6 flex items-center">
+                    Deploy
+                </button>
+</div>
+</header>
+<!-- Main Stage + Inspector Container -->
+<div class="flex-1 flex overflow-hidden">
+<!-- Main Stage (Canvas) -->
+<main class="flex-1 flex flex-col overflow-hidden min-w-0">
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- Title & Summary -->
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-4">Risk Center</h2>
+<div class="bg-surface-container-low border border-border-subtle rounded-lg p-5 flex items-center justify-between">
+<div class="flex items-center gap-6">
+<div>
+<div class="font-label-caps text-label-caps text-text-muted mb-1">Project Risk Score</div>
+<div class="flex items-baseline gap-2">
+<span class="font-code-md text-[32px] font-bold text-signal-rose">68</span>
+<span class="font-code-sm text-text-muted">/100</span>
+<span class="ml-2 px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-error-container text-on-error-container border border-error/20">High</span>
+</div>
+</div>
+<div class="h-12 border-l border-border-subtle mx-2"></div>
+<div class="flex-1 w-64 h-12 flex items-end">
+<!-- Sparkline placeholder using SVG data approach to avoid base64 -->
+<svg class="w-full h-full stroke-signal-rose fill-signal-rose/10" preserveaspectratio="none" viewbox="0 0 100 30">
+<path d="M0,20 L10,18 L20,25 L30,15 L40,10 L50,15 L60,5 L70,8 L80,2 L90,12 L100,0 L100,30 L0,30 Z" stroke="none"></path>
+<path d="M0,20 L10,18 L20,25 L30,15 L40,10 L50,15 L60,5 L70,8 L80,2 L90,12 L100,0" fill="none" stroke-width="2"></path>
+</svg>
+</div>
+</div>
+<div class="text-right">
+<div class="font-label-caps text-label-caps text-text-muted mb-1">Trend (30d)</div>
+<div class="font-code-sm text-signal-rose flex items-center justify-end gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                                    +12 pts
+                                </div>
+</div>
+</div>
+</div>
+<!-- Filters -->
+<div class="flex items-center gap-2 border-b border-border-subtle pb-px">
+<button class="px-4 py-2 font-label-caps text-label-caps text-primary border-b-2 border-primary">All Risks</button>
+<button class="px-4 py-2 font-label-caps text-label-caps text-text-muted hover:text-on-surface transition-colors">Technical Debt</button>
+<button class="px-4 py-2 font-label-caps text-label-caps text-text-muted hover:text-on-surface transition-colors">Security</button>
+<button class="px-4 py-2 font-label-caps text-label-caps text-text-muted hover:text-on-surface transition-colors">Compliance</button>
+<button class="px-4 py-2 font-label-caps text-label-caps text-text-muted hover:text-on-surface transition-colors">Architectural Drift</button>
+</div>
+<!-- High Density Risk List -->
+<div class="border border-border-subtle rounded-lg bg-surface-container-low overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-highest border-b border-border-subtle">
+<th class="px-4 py-2 font-label-caps text-label-caps text-text-muted w-24">Severity</th>
+<th class="px-4 py-2 font-label-caps text-label-caps text-text-muted">Risk Title</th>
+<th class="px-4 py-2 font-label-caps text-label-caps text-text-muted w-48">Impact</th>
+<th class="px-4 py-2 font-label-caps text-label-caps text-text-muted w-24 text-right">Age</th>
+</tr>
+</thead>
+<tbody class="font-code-sm text-on-surface">
+<tr class="border-b border-border-subtle bg-surface-variant/30 hover:bg-surface-container-high cursor-pointer transition-colors">
+<td class="px-4 py-h-row-height-dense">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-error-container text-on-error-container border border-error/20">CRITICAL</span>
+</td>
+<td class="px-4 py-2 font-body-sm">Circular Dependency: Core API</td>
+<td class="px-4 py-2 text-text-muted">High Build Risk</td>
+<td class="px-4 py-2 text-right text-text-muted">3 days</td>
+</tr>
+<tr class="border-b border-border-subtle hover:bg-surface-container-high cursor-pointer transition-colors">
+<td class="px-4 py-2 h-row-height-dense">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-signal-rose/20 text-signal-rose border border-signal-rose/30">HIGH</span>
+</td>
+<td class="px-4 py-2 font-body-sm">Deprecated Dependency: lodash v3.x</td>
+<td class="px-4 py-2 text-text-muted">Security Vulnerability</td>
+<td class="px-4 py-2 text-right text-text-muted">14 days</td>
+</tr>
+<tr class="border-b border-border-subtle hover:bg-surface-container-high cursor-pointer transition-colors">
+<td class="px-4 py-2 h-row-height-dense">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-signal-amber/20 text-signal-amber border border-signal-amber/30">MEDIUM</span>
+</td>
+<td class="px-4 py-2 font-body-sm">Unindexed Query: Users Table</td>
+<td class="px-4 py-2 text-text-muted">Performance Degradation</td>
+<td class="px-4 py-2 text-right text-text-muted">7 days</td>
+</tr>
+<tr class="hover:bg-surface-container-high cursor-pointer transition-colors">
+<td class="px-4 py-2 h-row-height-dense">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-surface-container-highest text-text-muted border border-border-subtle">LOW</span>
+</td>
+<td class="px-4 py-2 font-body-sm">Missing Docstrings: Auth Module</td>
+<td class="px-4 py-2 text-text-muted">Maintainability</td>
+<td class="px-4 py-2 text-right text-text-muted">45 days</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- Right Inspector -->
+<aside class="w-inspector-width bg-surface-container-low border-l border-border-subtle shrink-0 flex flex-col h-full overflow-hidden hidden xl:flex">
+<header class="h-row-height-standard flex items-center px-4 border-b border-border-subtle bg-surface-container">
+<span class="font-label-caps text-label-caps text-on-surface">Risk Detail</span>
+</header>
+<div class="flex-1 overflow-y-auto p-4 space-y-6">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">Circular Dependency: Core API</h3>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-error-container text-on-error-container border border-error/20">CRITICAL</span>
+<span class="font-code-sm text-text-muted">ID: RSK-842</span>
+</div>
+</div>
+<div class="space-y-3">
+<div class="font-label-caps text-label-caps text-text-muted border-b border-border-subtle pb-1">Risk Score Breakdown</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-background border border-border-subtle rounded p-3">
+<div class="font-code-sm text-text-muted mb-1">Impact</div>
+<div class="font-code-md text-signal-rose">9.5/10</div>
+</div>
+<div class="bg-background border border-border-subtle rounded p-3">
+<div class="font-code-sm text-text-muted mb-1">Difficulty</div>
+<div class="font-code-md text-signal-amber">7.0/10</div>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<div class="font-label-caps text-label-caps text-text-muted border-b border-border-subtle pb-1">Affected Components</div>
+<ul class="font-code-sm space-y-1">
+<li class="flex items-center gap-2 p-2 hover:bg-surface-container rounded cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px] text-text-muted">account_tree</span>
+<span>api-gateway</span>
+</li>
+<li class="flex items-center gap-2 p-2 hover:bg-surface-container rounded cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px] text-text-muted">account_tree</span>
+<span>auth-service</span>
+</li>
+<li class="flex items-center gap-2 p-2 hover:bg-surface-container rounded cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[14px] text-text-muted">account_tree</span>
+<span>core-models</span>
+</li>
+</ul>
+</div>
+<div class="space-y-2">
+<div class="font-label-caps text-label-caps text-text-muted border-b border-border-subtle pb-1">Recommended Mitigation</div>
+<div class="bg-surface-container border border-border-subtle rounded p-3 font-body-sm text-text-muted leading-relaxed">
+                            Extract shared interfaces to a neutral package. Refactor <code class="font-code-sm bg-surface-variant px-1 rounded text-on-surface">auth-service</code> to rely on generic abstractions rather than concrete implementations from <code class="font-code-sm bg-surface-variant px-1 rounded text-on-surface">api-gateway</code>.
+                        </div>
+</div>
+</div>
+<div class="p-4 border-t border-border-subtle bg-surface-container-low space-y-2">
+<button class="w-full bg-primary text-on-primary font-label-caps text-label-caps py-2 rounded hover:bg-primary-fixed transition-colors flex items-center justify-center gap-2">
+                        Assign to Team
+                    </button>
+<button class="w-full bg-transparent border border-border-subtle text-on-surface font-label-caps text-label-caps py-2 rounded hover:bg-surface-container transition-colors flex items-center justify-center gap-2">
+                        Create Jira Ticket
+                    </button>
+<button class="w-full bg-transparent text-text-muted font-label-caps text-label-caps py-2 rounded hover:text-on-surface transition-colors flex items-center justify-center gap-2">
+                        Mark as Technical Debt
+                    </button>
+</div>
+</aside>
+</div>
+</div>
+</body></html>

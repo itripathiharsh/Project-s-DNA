@@ -1,0 +1,32 @@
+# Project DNA — default ignore patterns
+# Files and directories matching these patterns are excluded from analysis.
+# Supports .gitignore-style glob patterns.
+
+node_modules/
+vendor/
+.bundle/
+target/
+build/
+dist/
+out/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv
+venv/
+*.egg-info/
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+.git/
+.svn/
+.hg/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

@@ -1,0 +1,344 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Enterprise Side-by-Side Diff Viewer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#a078ff",
+                        "surface": "#131313",
+                        "on-tertiary": "#482900",
+                        "surface-container": "#201f1f",
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary": "#3c0091",
+                        "on-tertiary-container": "#3f2300",
+                        "signal-cyan": "#06B6D4",
+                        "border-subtle": "#262626",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-tertiary-fixed": "#2c1700",
+                        "signal-emerald": "#10B981",
+                        "surface-container-highest": "#353534",
+                        "error-container": "#93000a",
+                        "primary-fixed": "#e9ddff",
+                        "on-error": "#690005",
+                        "surface-variant": "#353534",
+                        "inverse-on-surface": "#313030",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "inverse-primary": "#6d3bd7",
+                        "outline": "#958ea0",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-tint": "#d0bcff",
+                        "on-surface": "#e5e2e1",
+                        "secondary": "#c8c6c5",
+                        "background": "#131313",
+                        "error": "#ffb4ab",
+                        "tertiary": "#ffb869",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-error-container": "#ffdad6",
+                        "outline-variant": "#494454",
+                        "on-surface-variant": "#cbc3d7",
+                        "on-secondary-container": "#b7b5b4",
+                        "primary-fixed-dim": "#d0bcff",
+                        "on-primary-fixed": "#23005c",
+                        "surface-bright": "#3a3939",
+                        "on-tertiary-fixed-variant": "#673d00",
+                        "tertiary-fixed": "#ffdcbb",
+                        "tertiary-fixed-dim": "#ffb869",
+                        "surface-dim": "#131313",
+                        "on-secondary": "#303030",
+                        "text-muted": "#A3A3A3",
+                        "signal-amber": "#F59E0B",
+                        "on-background": "#e5e2e1",
+                        "primary": "#d0bcff",
+                        "on-primary-container": "#340080",
+                        "secondary-container": "#474746",
+                        "tertiary-container": "#ca801e",
+                        "on-secondary-fixed": "#1b1b1c",
+                        "surface-container-high": "#2a2a2a",
+                        "signal-rose": "#F43F5E",
+                        "on-primary-fixed-variant": "#5516be",
+                        "on-secondary-fixed-variant": "#474746",
+                        "diff-removed-bg": "rgba(244, 63, 94, 0.15)",
+                        "diff-added-bg": "rgba(16, 185, 129, 0.15)",
+                        "diff-removed-text": "#F43F5E",
+                        "diff-added-text": "#10B981"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "row-height-standard": "36px",
+                        "row-height-dense": "28px",
+                        "inspector-width": "320px",
+                        "sidebar-width": "64px",
+                        "gutter": "12px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter", "sans-serif"],
+                        "label-caps": ["Inter", "sans-serif"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "code-md": ["JetBrains Mono", "monospace"],
+                        "code-sm": ["JetBrains Mono", "monospace"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "label-caps": ["11px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "code-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "code-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .syntax-keyword { color: #d0bcff; }
+        .syntax-string { color: #10B981; }
+        .syntax-function { color: #06B6D4; }
+        .syntax-comment { color: #A3A3A3; }
+        .syntax-operator { color: #cbc3d7; }
+        .syntax-variable { color: #e5e2e1; }
+        
+        .line-number { width: 40px; text-align: right; padding-right: 12px; color: #494454; user-select: none; }
+        .code-row { display: flex; line-height: 20px; }
+        .code-row:hover { background-color: rgba(255,255,255,0.02); }
+        .code-content { padding-left: 12px; white-space: pre; }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex flex-col font-body-sm selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation (Reduced functionality for focused view) -->
+<header class="h-row-height-standard border-b border-border-subtle bg-surface flex justify-between items-center px-gutter w-full shrink-0">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-primary">Project DNA</span>
+<div class="h-4 w-px bg-border-subtle mx-2"></div>
+<div class="flex items-center gap-2 text-text-muted">
+<span class="font-body-md text-body-md">src/core/auth/AuthenticationProvider.ts</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3 font-code-sm text-code-sm">
+<div class="flex items-center gap-1 text-diff-added-text">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>42 lines</span>
+</div>
+<div class="flex items-center gap-1 text-diff-removed-text">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+<span>12 lines</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-1 px-3 py-1 rounded border border-border-subtle text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">history</span>
+                    History
+                </button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Slim Sidebar for global actions -->
+<aside class="w-sidebar-width bg-surface-container-low border-r border-border-subtle flex flex-col items-center py-4 shrink-0">
+<div class="flex flex-col gap-4">
+<button class="p-2 rounded text-text-muted hover:text-primary hover:bg-surface-container transition-colors group relative" title="Files">
+<span class="material-symbols-outlined">folder_open</span>
+</button>
+<button class="p-2 rounded text-text-muted hover:text-primary hover:bg-surface-container transition-colors relative" title="Search">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="p-2 rounded text-primary bg-surface-container-high border-r-2 border-primary relative" title="Git Diff">
+<span class="material-symbols-outlined">commit</span>
+</button>
+</div>
+<div class="mt-auto flex flex-col gap-4">
+<button class="p-2 rounded text-text-muted hover:text-primary hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</aside>
+<!-- Main Diff Area -->
+<main class="flex-1 flex flex-col overflow-hidden bg-[#0D0D0D]">
+<!-- Diff Header -->
+<div class="flex border-b border-border-subtle bg-surface-container-lowest shrink-0">
+<div class="flex-1 p-2 px-4 border-r border-border-subtle flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Original (HEAD~1)</span>
+<span class="font-code-sm text-code-sm text-text-muted">commit: a1b2c3d</span>
+</div>
+<div class="flex-1 p-2 px-4 flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary uppercase tracking-wider flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                        Refactored (Working Tree)
+                    </span>
+<span class="font-code-sm text-code-sm text-text-muted">commit: pending</span>
+</div>
+</div>
+<!-- Code Diff Content (Scrollable) -->
+<div class="flex-1 flex overflow-y-auto font-code-md text-code-md">
+<!-- Left Pane (Original) -->
+<div class="flex-1 border-r border-border-subtle pb-8">
+<div class="code-row text-text-muted"><div class="line-number">1</div><div class="code-content"><span class="syntax-keyword">import</span> { store } <span class="syntax-keyword">from</span> <span class="syntax-string">'@/store'</span>;</div></div>
+<div class="code-row text-text-muted"><div class="line-number">2</div><div class="code-content"><span class="syntax-keyword">import</span> { api } <span class="syntax-keyword">from</span> <span class="syntax-string">'@/services/api'</span>;</div></div>
+<div class="code-row"><div class="line-number">3</div><div class="code-content"> </div></div>
+<div class="code-row bg-diff-removed-bg text-diff-removed-text relative group">
+<div class="line-number bg-error-container/20 border-r-2 border-signal-rose">4</div>
+<div class="code-content"><span class="syntax-keyword">export</span> <span class="syntax-keyword">class</span> <span class="syntax-function">AuthenticationProvider</span> {</div>
+</div>
+<div class="code-row bg-diff-removed-bg text-diff-removed-text">
+<div class="line-number bg-error-container/20 border-r-2 border-signal-rose">5</div>
+<div class="code-content"> <span class="syntax-keyword">private</span> token: <span class="syntax-keyword">string</span> | <span class="syntax-keyword">null</span> = <span class="syntax-keyword">null</span>;</div>
+</div>
+<div class="code-row bg-diff-removed-bg text-diff-removed-text">
+<div class="line-number bg-error-container/20 border-r-2 border-signal-rose">6</div>
+<div class="code-content"> </div>
+</div>
+<div class="code-row bg-diff-removed-bg text-diff-removed-text">
+<div class="line-number bg-error-container/20 border-r-2 border-signal-rose">7</div>
+<div class="code-content"> <span class="syntax-keyword">constructor</span>() {</div>
+</div>
+<div class="code-row bg-diff-removed-bg text-diff-removed-text">
+<div class="line-number bg-error-container/20 border-r-2 border-signal-rose">8</div>
+<div class="code-content"> <span class="syntax-keyword">this</span>.token = store.getState().auth.token;</div>
+</div>
+<div class="code-row bg-diff-removed-bg text-diff-removed-text">
+<div class="line-number bg-error-container/20 border-r-2 border-signal-rose">9</div>
+<div class="code-content">  }</div>
+</div>
+<!-- Padding for alignment -->
+<div class="h-[260px] bg-surface-container-lowest/50 flex items-center justify-center border-y border-border-subtle my-2">
+<span class="font-label-caps text-label-caps text-text-muted">Code Block Replaced</span>
+</div>
+<div class="code-row text-text-muted"><div class="line-number">10</div><div class="code-content"> </div></div>
+<div class="code-row text-text-muted"><div class="line-number">11</div><div class="code-content"> <span class="syntax-keyword">public</span> <span class="syntax-keyword">async</span> <span class="syntax-function">login</span>(credentials: Credentials) {</div></div>
+</div>
+<!-- Right Pane (Refactored) -->
+<div class="flex-1 pb-8">
+<div class="code-row text-text-muted"><div class="line-number">1</div><div class="code-content"><span class="syntax-comment">// Removed global store dependency</span></div></div>
+<div class="code-row text-text-muted"><div class="line-number">2</div><div class="code-content"><span class="syntax-keyword">import</span> { api } <span class="syntax-keyword">from</span> <span class="syntax-string">'@/services/api'</span>;</div></div>
+<div class="code-row text-text-muted"><div class="line-number">3</div><div class="code-content"><span class="syntax-keyword">import</span> { TokenManager } <span class="syntax-keyword">from</span> <span class="syntax-string">'./TokenManager'</span>;</div></div>
+<div class="code-row"><div class="line-number">4</div><div class="code-content"> </div></div>
+<div class="code-row bg-diff-added-bg relative group">
+<div class="line-number bg-signal-emerald/10 border-r-2 border-signal-emerald text-diff-added-text">5</div>
+<div class="code-content"><span class="syntax-keyword">export</span> <span class="syntax-keyword">class</span> <span class="syntax-function">AuthenticationProvider</span> <span class="syntax-keyword">implements</span> IAuthProvider {</div>
+</div>
+<div class="code-row bg-diff-added-bg">
+<div class="line-number bg-signal-emerald/10 border-r-2 border-signal-emerald text-diff-added-text">6</div>
+<div class="code-content"> <span class="syntax-keyword">private</span> tokenManager: TokenManager;</div>
+</div>
+<div class="code-row bg-diff-added-bg">
+<div class="line-number bg-signal-emerald/10 border-r-2 border-signal-emerald text-diff-added-text">7</div>
+<div class="code-content"> </div>
+</div>
+<div class="code-row bg-diff-added-bg">
+<div class="line-number bg-signal-emerald/10 border-r-2 border-signal-emerald text-diff-added-text">8</div>
+<div class="code-content"> <span class="syntax-keyword">constructor</span>(tokenManager: TokenManager = <span class="syntax-keyword">new</span> TokenManager()) {</div>
+</div>
+<div class="code-row bg-diff-added-bg">
+<div class="line-number bg-signal-emerald/10 border-r-2 border-signal-emerald text-diff-added-text">9</div>
+<div class="code-content"> <span class="syntax-keyword">this</span>.tokenManager = tokenManager;</div>
+</div>
+<div class="code-row bg-diff-added-bg">
+<div class="line-number bg-signal-emerald/10 border-r-2 border-signal-emerald text-diff-added-text">10</div>
+<div class="code-content">  }</div>
+</div>
+<!-- AI Explanation Block (Inline) -->
+<div class="mx-4 my-2 p-3 bg-surface-container rounded border border-primary-container/30 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary-container"></div>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container mt-0.5">auto_awesome</span>
+<div>
+<h4 class="font-headline-md text-[13px] font-semibold text-primary-fixed mb-1">Architectural Insight</h4>
+<p class="font-body-md text-body-sm text-on-surface-variant">
+                                    Decoupled <code>auth-provider</code> from global state (Redux). By injecting <code>TokenManager</code>, this class is now pure, easier to unit test, and eliminates circular dependency risks identified in PR #402.
+                                </p>
+</div>
+</div>
+</div>
+<div class="code-row text-text-muted"><div class="line-number">11</div><div class="code-content"> </div></div>
+<div class="code-row text-text-muted"><div class="line-number">12</div><div class="code-content"> <span class="syntax-keyword">public</span> <span class="syntax-keyword">async</span> <span class="syntax-function">login</span>(credentials: Credentials) {</div></div>
+<div class="code-row text-text-muted"><div class="line-number">13</div><div class="code-content"> <span class="syntax-keyword">const</span> response = <span class="syntax-keyword">await</span> api.post(<span class="syntax-string">'/auth/login'</span>, credentials);</div></div>
+</div>
+</div>
+</main>
+<!-- Inspector Panel -->
+<aside class="w-inspector-width bg-surface-container-low border-l border-border-subtle flex flex-col shrink-0">
+<!-- Header -->
+<div class="h-row-height-standard border-b border-border-subtle flex items-center px-4">
+<h2 class="font-label-caps text-label-caps text-text-muted uppercase tracking-wider">Analysis Inspector</h2>
+</div>
+<div class="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+<!-- Graph Impact -->
+<div>
+<h3 class="font-body-md text-body-sm text-text-muted mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+                        Graph Impact
+                    </h3>
+<div class="bg-[#0D0D0D] rounded border border-border-subtle p-3 h-32 relative flex items-center justify-center overflow-hidden">
+<!-- Simulated small graph view -->
+<div class="absolute inset-0 opacity-40" style="background-image: radial-gradient(circle at 2px 2px, #262626 1px, transparent 0); background-size: 16px 16px;"></div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="px-2 py-1 rounded bg-surface border border-border-subtle text-[10px] font-code-sm text-text-muted">Global Store</div>
+<div class="w-12 h-px bg-signal-rose relative">
+<div class="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 border-t border-r border-signal-rose rotate-45 -translate-x-1"></div>
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface text-signal-rose">
+<span class="material-symbols-outlined text-[14px]">close</span>
+</div>
+</div>
+<div class="px-2 py-1 rounded bg-primary-container/10 border border-primary-container text-primary font-code-sm text-[10px]">AuthProvider</div>
+</div>
+</div>
+</div>
+<!-- Risk Summary -->
+<div>
+<h3 class="font-body-md text-body-sm text-text-muted mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">health_and_safety</span>
+                        Risk &amp; Quality
+                    </h3>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center p-2 rounded bg-surface-container">
+<span class="text-body-sm text-on-surface-variant">Tech Debt Score</span>
+<span class="font-code-sm text-signal-emerald flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_down</span>
+                                -4.2
+                            </span>
+</div>
+<div class="flex justify-between items-center p-2 rounded bg-surface-container">
+<span class="text-body-sm text-on-surface-variant">Cyclomatic Complexity</span>
+<span class="font-code-sm text-signal-cyan flex items-center gap-1">
+                                12 <span class="text-text-muted mx-1">→</span> 8
+                            </span>
+</div>
+<div class="flex justify-between items-center p-2 rounded bg-surface-container">
+<span class="text-body-sm text-on-surface-variant">Test Coverage</span>
+<span class="font-code-sm text-signal-emerald flex items-center gap-1">
+                                +14%
+                            </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Footer Actions -->
+<div class="border-t border-border-subtle p-4 bg-surface-container-low flex flex-col gap-3">
+<button class="w-full py-2 bg-primary text-on-primary font-headline-md text-[14px] font-semibold rounded hover:bg-primary-fixed transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+                    Accept Refactor
+                </button>
+<button class="w-full py-2 bg-transparent text-text-muted border border-border-subtle font-headline-md text-[14px] rounded hover:text-on-surface hover:bg-surface-container transition-colors">
+                    Reject Changes
+                </button>
+</div>
+</aside>
+</div>
+</body></html>

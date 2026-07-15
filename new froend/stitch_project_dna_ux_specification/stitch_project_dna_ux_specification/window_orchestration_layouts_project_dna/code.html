@@ -1,0 +1,408 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Project DNA - Workspace Orchestration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-container": "#a078ff",
+                        "surface": "#131313",
+                        "on-tertiary": "#482900",
+                        "surface-container": "#201f1f",
+                        "surface-container-low": "#1c1b1b",
+                        "on-primary": "#3c0091",
+                        "on-tertiary-container": "#3f2300",
+                        "signal-cyan": "#06B6D4",
+                        "border-subtle": "#262626",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-tertiary-fixed": "#2c1700",
+                        "signal-emerald": "#10B981",
+                        "surface-container-highest": "#353534",
+                        "error-container": "#93000a",
+                        "primary-fixed": "#e9ddff",
+                        "on-error": "#690005",
+                        "surface-variant": "#353534",
+                        "inverse-on-surface": "#313030",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "inverse-primary": "#6d3bd7",
+                        "outline": "#958ea0",
+                        "inverse-surface": "#e5e2e1",
+                        "surface-tint": "#d0bcff",
+                        "on-surface": "#e5e2e1",
+                        "secondary": "#c8c6c5",
+                        "background": "#131313",
+                        "error": "#ffb4ab",
+                        "tertiary": "#ffb869",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-error-container": "#ffdad6",
+                        "outline-variant": "#494454",
+                        "on-surface-variant": "#cbc3d7",
+                        "on-secondary-container": "#b7b5b4",
+                        "primary-fixed-dim": "#d0bcff",
+                        "on-primary-fixed": "#23005c",
+                        "surface-bright": "#3a3939",
+                        "on-tertiary-fixed-variant": "#673d00",
+                        "tertiary-fixed": "#ffdcbb",
+                        "tertiary-fixed-dim": "#ffb869",
+                        "surface-dim": "#131313",
+                        "on-secondary": "#303030",
+                        "text-muted": "#A3A3A3",
+                        "signal-amber": "#F59E0B",
+                        "on-background": "#e5e2e1",
+                        "primary": "#d0bcff",
+                        "on-primary-container": "#340080",
+                        "secondary-container": "#474746",
+                        "tertiary-container": "#ca801e",
+                        "on-secondary-fixed": "#1b1b1c",
+                        "surface-container-high": "#2a2a2a",
+                        "signal-rose": "#F43F5E",
+                        "on-primary-fixed-variant": "#5516be",
+                        "on-secondary-fixed-variant": "#474746"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "row-height-standard": "36px",
+                        "row-height-dense": "28px",
+                        "inspector-width": "320px",
+                        "sidebar-width": "260px",
+                        "gutter": "12px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "label-caps": ["11px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "code-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "code-sm": ["11px", { "lineHeight": "14px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .resizer {
+            width: 4px;
+            cursor: col-resize;
+            background-color: transparent;
+            transition: background-color 0.2s ease;
+            z-index: 10;
+        }
+        .resizer:hover, .resizer:active {
+            background-color: #d0bcff;
+        }
+        .panel-active {
+            box-shadow: inset 0 0 0 1px #d0bcff;
+        }
+        /* Hide scrollbars for clean IDE look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131313;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #353534;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #474746;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex flex-col font-body-md select-none">
+<!-- TopNavBar -->
+<nav class="bg-surface dark:bg-surface border-b border-border-subtle h-row-height-standard flex justify-between items-center px-gutter w-full shrink-0 z-20 absolute top-0 left-0">
+<div class="flex items-center gap-4">
+<div class="font-headline-md text-headline-md font-black text-primary flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">hub</span>
+                Project DNA
+            </div>
+<div class="h-4 w-px bg-border-subtle mx-2"></div>
+<!-- Navigation Links -->
+<div class="flex items-center gap-6">
+<div class="font-label-caps text-label-caps text-primary border-b border-primary pb-1 cursor-pointer">Explorer</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer pb-1">Timeline</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors cursor-pointer pb-1">Analysis</div>
+</div>
+</div>
+<!-- Saved Layouts Dropdown -->
+<div class="flex items-center gap-2 border border-border-subtle bg-surface-container-low px-2 py-1 rounded cursor-pointer hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-sm text-text-muted">dashboard</span>
+<span class="font-body-sm text-body-sm text-on-surface">Layout: Triage</span>
+<span class="material-symbols-outlined text-sm text-text-muted">arrow_drop_down</span>
+</div>
+<div class="flex items-center gap-4">
+<!-- Trailing Actions -->
+<div class="flex items-center gap-3">
+<button class="font-label-caps text-label-caps text-on-surface border border-border-subtle px-3 h-6 rounded hover:bg-surface-container transition-colors">Fork</button>
+<button class="font-label-caps text-label-caps bg-primary text-on-primary-container px-3 h-6 rounded hover:opacity-90 transition-opacity font-bold">Execute Pipeline</button>
+</div>
+<!-- Icon Actions -->
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors text-[20px]">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors text-[20px]">help_outline</span>
+<img class="w-6 h-6 rounded-full object-cover border border-border-subtle" data-alt="A small circular avatar placeholder image for a generic administrator profile in a dark-mode web application, featuring a minimalist geometric pattern in deep purples and grays. The style is clean, corporate, and modern, fitting seamlessly into an integrated development environment." src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg">
+</div>
+</div>
+</nav>
+<!-- Main Workspace Area -->
+<div class="flex-1 flex w-full pt-[36px] pb-[28px] overflow-hidden">
+<!-- Left Panel: SideNavBar / Explorer -->
+<div class="w-sidebar-width bg-surface-container-low dark:bg-surface-container-low border-r border-border-subtle flex flex-col h-full shrink-0 panel-active" id="panel-left">
+<!-- Panel Header / Tabs -->
+<div class="flex items-center justify-between border-b border-border-subtle bg-surface h-row-height-standard px-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary">folder</span>
+<span class="font-body-sm text-body-sm font-bold text-on-surface">Repository</span>
+</div>
+<!-- Panel Controls -->
+<div class="flex items-center gap-1 text-text-muted">
+<span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-primary" title="Split Vertical">splitscreen_left</span>
+<span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-primary" title="Split Horizontal">splitscreen_top</span>
+<span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-on-surface" title="Close">close</span>
+</div>
+</div>
+<!-- Side Nav Core -->
+<div class="flex flex-col h-full py-gutter px-2 overflow-y-auto">
+<div class="mb-4">
+<div class="font-headline-md text-headline-md font-bold text-primary truncate">Project DNA</div>
+<div class="font-body-sm text-body-sm text-text-muted">v4.2.0-stable</div>
+</div>
+<div class="flex flex-col gap-1 flex-1">
+<div class="flex items-center gap-2 p-1.5 rounded text-primary bg-surface-container-high border-r-2 border-primary cursor-pointer active:opacity-80 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px]">schema</span>
+<span>Modules</span>
+</div>
+<div class="flex items-center gap-2 p-1.5 rounded text-text-muted hover:text-on-surface hover:bg-surface-container transition-colors duration-150 cursor-pointer active:opacity-80 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px]">hub</span>
+<span>Architecture</span>
+</div>
+<div class="flex items-center gap-2 p-1.5 rounded text-text-muted hover:text-on-surface hover:bg-surface-container transition-colors duration-150 cursor-pointer active:opacity-80 font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px]">monitoring</span>
+<span>Telemetry</span>
+</div>
+<!-- File Tree Mockup inside Modules -->
+<div class="pl-6 mt-2 flex flex-col gap-1 border-l border-border-subtle ml-2">
+<div class="flex items-center gap-2 p-1 rounded text-text-muted hover:text-on-surface hover:bg-surface-container font-code-sm text-code-sm cursor-pointer">
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="material-symbols-outlined text-[14px]">folder</span>
+<span>core_engine</span>
+</div>
+<div class="flex items-center gap-2 p-1 rounded text-text-muted hover:text-on-surface hover:bg-surface-container font-code-sm text-code-sm cursor-pointer">
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+<span class="material-symbols-outlined text-[14px]">folder_open</span>
+<span class="text-on-surface">api_gateway</span>
+</div>
+<div class="pl-4 flex flex-col gap-1">
+<div class="flex items-center gap-2 p-1 rounded text-signal-emerald hover:bg-surface-container font-code-sm text-code-sm cursor-pointer">
+<span class="material-symbols-outlined text-[14px]">data_object</span>
+<span>routes.ts</span>
+</div>
+<div class="flex items-center gap-2 p-1 rounded text-text-muted hover:text-on-surface hover:bg-surface-container font-code-sm text-code-sm cursor-pointer">
+<span class="material-symbols-outlined text-[14px]">data_object</span>
+<span>middleware.ts</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Resizer 1 -->
+<div class="resizer" id="resizer-1"></div>
+<!-- Center Panel: Graph Workspace -->
+<div class="flex-1 bg-surface-container-lowest flex flex-col relative overflow-hidden" id="panel-center">
+<!-- Panel Header / Tabs -->
+<div class="flex items-center border-b border-border-subtle bg-surface h-row-height-standard pl-0 pr-2">
+<!-- Tab -->
+<div class="flex items-center gap-2 px-3 h-full bg-surface-container-low border-t-2 border-t-primary border-r border-border-subtle text-primary font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+<span>Graph View: api_gateway</span>
+<span class="material-symbols-outlined text-[14px] ml-2 cursor-pointer hover:text-on-surface">close</span>
+</div>
+<!-- Inactive Tab -->
+<div class="flex items-center gap-2 px-3 h-full border-r border-border-subtle text-text-muted hover:bg-surface-container font-body-sm text-body-sm cursor-pointer">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+<span>Terminal 1</span>
+</div>
+<div class="flex-1"></div>
+<!-- Panel Controls -->
+<div class="flex items-center gap-2 text-text-muted">
+<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-primary" title="Split Vertical">splitscreen_left</span>
+<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-primary" title="Split Horizontal">splitscreen_bottom</span>
+<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-primary" title="Maximize">fullscreen</span>
+</div>
+</div>
+<!-- Canvas Area -->
+<div class="flex-1 relative w-full h-full bg-[#0D0D0D]">
+<!-- Placeholder for WebGL Node Graph -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+<svg height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="40" id="grid" patternUnits="userSpaceOnUse" width="40">
+<path d="M 40 0 L 0 0 0 40" fill="none" stroke="#262626" stroke-width="1"></path>
+</pattern>
+</defs>
+<rect fill="url(#grid)" height="100%" width="100%"></rect>
+</svg>
+</div>
+<!-- Mock Graph Nodes (Floating) -->
+<div class="absolute top-1/4 left-1/4 p-2 bg-surface-container border border-primary rounded shadow-lg flex items-center gap-2 cursor-move">
+<div class="w-2 h-2 rounded-full bg-signal-emerald"></div>
+<span class="font-code-md text-code-md text-on-surface">AuthNode</span>
+</div>
+<div class="absolute top-1/3 left-1/2 p-2 bg-surface-container border border-border-subtle rounded shadow-lg flex items-center gap-2 cursor-move">
+<div class="w-2 h-2 rounded-full bg-signal-cyan"></div>
+<span class="font-code-md text-code-md text-on-surface">DataRouter</span>
+</div>
+<!-- Connecting Line Mockup -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: -1;">
+<path d="M 320 200 C 400 200, 450 280, 500 280" fill="none" stroke="#958ea0" stroke-dasharray="4" stroke-width="2"></path>
+</svg>
+<!-- Floating Canvas Controls -->
+<div class="absolute bottom-4 right-4 flex gap-1 bg-surface-container border border-border-subtle rounded p-1 shadow-lg">
+<button class="w-6 h-6 flex items-center justify-center rounded hover:bg-surface-variant text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">add</span></button>
+<button class="w-6 h-6 flex items-center justify-center rounded hover:bg-surface-variant text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">remove</span></button>
+<div class="w-px h-4 bg-border-subtle self-center mx-1"></div>
+<button class="w-6 h-6 flex items-center justify-center rounded hover:bg-surface-variant text-on-surface-variant"><span class="material-symbols-outlined text-[16px]">center_focus_weak</span></button>
+</div>
+</div>
+</div>
+<!-- Resizer 2 -->
+<div class="resizer" id="resizer-2"></div>
+<!-- Right Panel: SideNavBar (Inspector) -->
+<div class="w-inspector-width bg-surface-container-low dark:bg-surface-container-low border-l border-border-subtle flex flex-col h-full shrink-0" id="panel-right">
+<!-- Panel Header / Tabs -->
+<div class="flex items-center justify-between border-b border-border-subtle bg-surface h-row-height-standard px-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-text-muted">insights</span>
+<span class="font-body-sm text-body-sm font-bold text-on-surface">Intelligence</span>
+</div>
+<!-- Panel Controls -->
+<div class="flex items-center gap-1 text-text-muted">
+<span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-on-surface" title="Close">close</span>
+</div>
+</div>
+<div class="flex flex-col h-full border-l border-border-subtle">
+<!-- Inspector Header -->
+<div class="px-3 py-2 border-b border-border-subtle">
+<div class="font-label-caps text-label-caps text-text-muted mb-1">Inspector</div>
+<div class="font-headline-md text-headline-md font-bold text-on-surface truncate">Node metadata</div>
+</div>
+<!-- Tabs -->
+<div class="flex border-b border-border-subtle px-2 gap-4">
+<div class="py-2 border-b-2 border-primary text-primary font-bold font-body-sm text-body-sm cursor-default">Properties</div>
+<div class="py-2 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface cursor-pointer font-body-sm text-body-sm">Metrics</div>
+<div class="py-2 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface cursor-pointer font-body-sm text-body-sm">Dependencies</div>
+</div>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-3 flex flex-col gap-4 font-body-sm text-body-sm">
+<!-- Insight Card 1 -->
+<div class="bg-surface border border-border-subtle rounded p-2 flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-signal-amber bg-signal-amber/10 px-1.5 rounded">Warning</span>
+<span class="font-code-sm text-text-muted">2m ago</span>
+</div>
+<div class="text-on-surface font-semibold mt-1">High Latency Detected</div>
+<div class="text-text-muted text-xs">AuthNode is experiencing &gt;200ms response times. Consider scaling instances.</div>
+<div class="mt-2 text-primary hover:underline cursor-pointer text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">analytics</span> View Trace
+                        </div>
+</div>
+<!-- Insight Card 2 -->
+<div class="bg-surface border border-border-subtle rounded p-2 flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-signal-cyan bg-signal-cyan/10 px-1.5 rounded">Optimization</span>
+<span class="font-code-sm text-text-muted">1hr ago</span>
+</div>
+<div class="text-on-surface font-semibold mt-1">Refactor Suggestion</div>
+<div class="text-text-muted text-xs">Duplicate validation logic found in routes.ts and middleware.ts.</div>
+</div>
+<!-- Meta details list -->
+<div class="mt-4 border-t border-border-subtle pt-2">
+<div class="grid grid-cols-2 gap-y-2 text-xs">
+<div class="text-text-muted">Status</div>
+<div class="text-signal-emerald flex items-center gap-1"><div class="w-1.5 h-1.5 rounded-full bg-signal-emerald"></div> Healthy</div>
+<div class="text-text-muted">Uptime</div>
+<div class="text-on-surface font-code-sm">14d 2h 45m</div>
+<div class="text-text-muted">Throughput</div>
+<div class="text-on-surface font-code-sm">1.2k req/s</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Global Status Bar -->
+<div class="bg-surface-container-low border-t border-border-subtle h-[28px] w-full fixed bottom-0 left-0 flex justify-between items-center px-2 z-20">
+<div class="flex items-center gap-4 text-xs font-code-sm text-text-muted">
+<div class="flex items-center gap-1 cursor-pointer hover:text-on-surface">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                System Status: Healthy
+            </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">memory</span>
+                CPU: 12%
+            </div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">storage</span>
+                MEM: 4.2GB
+            </div>
+</div>
+<div class="flex items-center gap-3">
+<!-- Focus Mode Toggle -->
+<div class="flex items-center gap-1.5 cursor-pointer hover:text-on-surface text-text-muted text-xs" title="Focus Mode">
+<span class="material-symbols-outlined text-[14px]">visibility_off</span>
+<span>Focus</span>
+</div>
+<div class="w-px h-3 bg-border-subtle"></div>
+<div class="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-on-surface">
+<span class="material-symbols-outlined text-[14px]">settings</span>
+                Settings
+            </div>
+<div class="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-on-surface">
+<span class="material-symbols-outlined text-[14px]">contact_support</span>
+                Support
+            </div>
+</div>
+</div>
+<!-- Simple script for basic interactivity simulation (resizing not fully implemented to keep code short, just structural demonstration) -->
+<script>
+        // Simulate panel activation on click
+        document.getElementById('panel-left').addEventListener('mousedown', function() {
+            document.querySelectorAll('.panel-active').forEach(el => el.classList.remove('panel-active'));
+            this.classList.add('panel-active');
+        });
+        document.getElementById('panel-center').addEventListener('mousedown', function() {
+            document.querySelectorAll('.panel-active').forEach(el => el.classList.remove('panel-active'));
+            this.classList.add('panel-active');
+        });
+        document.getElementById('panel-right').addEventListener('mousedown', function() {
+            document.querySelectorAll('.panel-active').forEach(el => el.classList.remove('panel-active'));
+            this.classList.add('panel-active');
+        });
+    </script>
+</body></html>

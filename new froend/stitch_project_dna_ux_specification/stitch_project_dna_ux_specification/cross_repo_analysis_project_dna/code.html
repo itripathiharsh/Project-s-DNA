@@ -1,0 +1,404 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Project DNA | Cross-Repo Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "signal-amber": "#F59E0B",
+                    "tertiary-fixed": "#ffdcbb",
+                    "surface-container": "#201f1f",
+                    "surface": "#131313",
+                    "on-tertiary": "#482900",
+                    "surface-container-highest": "#353534",
+                    "text-muted": "#A3A3A3",
+                    "surface-variant": "#353534",
+                    "surface-container-lowest": "#0e0e0e",
+                    "background": "#131313",
+                    "on-error-container": "#ffdad6",
+                    "secondary-fixed": "#e5e2e1",
+                    "primary": "#d0bcff",
+                    "border-subtle": "#262626",
+                    "on-tertiary-fixed": "#2c1700",
+                    "surface-container-low": "#1c1b1b",
+                    "secondary-container": "#474746",
+                    "on-secondary-container": "#b7b5b4",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "outline": "#958ea0",
+                    "on-tertiary-fixed-variant": "#673d00",
+                    "on-tertiary-container": "#3f2300",
+                    "on-surface": "#e5e2e1",
+                    "surface-tint": "#d0bcff",
+                    "inverse-on-surface": "#313030",
+                    "tertiary-fixed-dim": "#ffb869",
+                    "surface-container-high": "#2a2a2a",
+                    "surface-bright": "#3a3939",
+                    "primary-fixed": "#e9ddff",
+                    "surface-dim": "#131313",
+                    "error-container": "#93000a",
+                    "inverse-surface": "#e5e2e1",
+                    "signal-rose": "#F43F5E",
+                    "on-surface-variant": "#cbc3d7",
+                    "on-primary-fixed-variant": "#5516be",
+                    "on-secondary-fixed": "#1b1b1c",
+                    "on-error": "#690005",
+                    "signal-cyan": "#06B6D4",
+                    "error": "#ffb4ab",
+                    "outline-variant": "#494454",
+                    "primary-fixed-dim": "#d0bcff",
+                    "on-primary-fixed": "#23005c",
+                    "tertiary": "#ffb869",
+                    "signal-emerald": "#10B981",
+                    "on-background": "#e5e2e1",
+                    "inverse-primary": "#6d3bd7",
+                    "on-primary": "#3c0091",
+                    "tertiary-container": "#ca801e",
+                    "on-secondary": "#303030",
+                    "on-secondary-fixed-variant": "#474746",
+                    "primary-container": "#a078ff",
+                    "on-primary-container": "#340080",
+                    "secondary": "#c8c6c5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "row-height-dense": "28px",
+                    "row-height-standard": "36px",
+                    "unit": "4px",
+                    "sidebar-width": "260px",
+                    "inspector-width": "320px",
+                    "gutter": "12px"
+            },
+            "fontFamily": {
+                    "label-caps": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "code-md": ["JetBrains Mono"],
+                    "body-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "code-sm": ["JetBrains Mono"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-md": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "code-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #0D0D0D; color: #E5E2E1; }
+        .dependency-node { transition: all 0.2s ease; cursor: pointer; }
+        .dependency-node:hover { transform: scale(1.1); filter: brightness(1.2); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #131313; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #353534; border-radius: 2px; }
+        .heatmap-cell:hover { outline: 1px solid #d0bcff; z-index: 10; }
+        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .animate-pulse-slow { animation: pulse-slow 3s infinite ease-in-out; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden font-body-md text-body-md selection:bg-primary selection:text-on-primary-container">
+<!-- Sidebar Navigation -->
+<aside class="flex flex-col h-screen fixed left-0 top-0 z-40 bg-surface-container-low dark:bg-surface-container-low border-r border-border-subtle w-sidebar-width h-full left-0">
+<div class="px-gutter h-row-height-standard flex items-center mb-6 mt-4">
+<span class="font-headline-lg text-headline-lg font-black text-primary">Project DNA</span>
+</div>
+<nav class="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
+<div class="flex items-center px-3 py-2 text-primary font-bold border-l-2 border-primary bg-surface-container-highest transition-all duration-150 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-[20px]">dashboard</span>
+<span class="font-label-caps text-label-caps">DASHBOARD</span>
+</div>
+<div class="flex items-center px-3 py-2 text-text-muted hover:bg-surface-variant hover:text-on-surface transition-all duration-150 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-[20px]">folder_open</span>
+<span class="font-label-caps text-label-caps">EXPLORER</span>
+</div>
+<div class="flex items-center px-3 py-2 text-text-muted hover:bg-surface-variant hover:text-on-surface transition-all duration-150 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-[20px]">account_tree</span>
+<span class="font-label-caps text-label-caps">GRAPH</span>
+</div>
+<div class="flex items-center px-3 py-2 text-text-muted hover:bg-surface-variant hover:text-on-surface transition-all duration-150 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-[20px]">psychology</span>
+<span class="font-label-caps text-label-caps">INTELLIGENCE</span>
+</div>
+<div class="flex items-center px-3 py-2 text-text-muted hover:bg-surface-variant hover:text-on-surface transition-all duration-150 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-[20px]">security</span>
+<span class="font-label-caps text-label-caps">RISK CENTER</span>
+</div>
+<div class="flex items-center px-3 py-2 text-text-muted hover:bg-surface-variant hover:text-on-surface transition-all duration-150 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-[20px]">menu_book</span>
+<span class="font-label-caps text-label-caps">KNOWLEDGE</span>
+</div>
+<div class="flex items-center px-3 py-2 text-text-muted hover:bg-surface-variant hover:text-on-surface transition-all duration-150 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-[20px]">history</span>
+<span class="font-label-caps text-label-caps">EVOLUTION</span>
+</div>
+</nav>
+<div class="p-3 border-t border-border-subtle">
+<div class="flex items-center px-3 py-2 text-text-muted hover:bg-surface-variant hover:text-on-surface transition-all duration-150 ease-in-out cursor-pointer mb-1">
+<span class="material-symbols-outlined mr-3 text-[20px]">help</span>
+<span class="font-label-caps text-label-caps">SUPPORT</span>
+</div>
+<div class="flex items-center px-3 py-2 text-text-muted hover:bg-surface-variant hover:text-on-surface transition-all duration-150 ease-in-out cursor-pointer">
+<span class="material-symbols-outlined mr-3 text-[20px]">settings</span>
+<span class="font-label-caps text-label-caps">SETTINGS</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Stage -->
+<main class="ml-sidebar-width flex-1 h-screen flex flex-col bg-surface-container-lowest overflow-hidden">
+<!-- Top Toolbar -->
+<header class="h-row-height-standard flex items-center justify-between px-gutter border-b border-border-subtle bg-surface-container sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Fleet Architecture Analysis</h1>
+<div class="flex items-center gap-2 px-2 py-0.5 bg-surface-variant rounded-lg border border-border-subtle">
+<span class="font-code-sm text-code-sm text-primary">ANALYZING 24 REPOS</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></span>
+<span class="font-code-sm text-code-sm text-text-muted">SYNCED 2M AGO</span>
+</div>
+<div class="flex items-center gap-2 border-l border-border-subtle pl-4">
+<span class="material-symbols-outlined text-[18px] text-text-muted cursor-pointer hover:text-primary">terminal</span>
+<span class="material-symbols-outlined text-[18px] text-text-muted cursor-pointer hover:text-primary">notifications</span>
+<div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center cursor-pointer">
+<span class="text-[10px] font-bold text-on-primary-container">JD</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Canvas Area -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-gutter space-y-gutter">
+<!-- Dependency Graph Section -->
+<section class="bg-surface-container-low border border-border-subtle rounded-xl p-4 relative overflow-hidden h-[400px]">
+<div class="flex items-center justify-between mb-4 relative z-10">
+<h3 class="font-label-caps text-label-caps text-text-muted">INTER-REPO DEPENDENCY GRAPH</h3>
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1 font-code-sm text-code-sm"><span class="w-2 h-2 rounded-full bg-primary"></span> Healthy</span>
+<span class="flex items-center gap-1 font-code-sm text-code-sm"><span class="w-2 h-2 rounded-full bg-signal-amber"></span> Warning</span>
+<span class="flex items-center gap-1 font-code-sm text-code-sm"><span class="w-2 h-2 rounded-full bg-signal-rose"></span> Critical</span>
+</div>
+</div>
+<!-- Schematic Visualization -->
+<div class="absolute inset-0 flex items-center justify-center">
+<svg class="opacity-20" height="100%" width="100%">
+<path d="M 200,200 L 400,100" stroke="#8B5CF6" stroke-width="1"></path>
+<path d="M 200,200 L 400,300" stroke="#8B5CF6" stroke-width="1"></path>
+<path d="M 400,100 L 600,200" stroke="#8B5CF6" stroke-width="1"></path>
+<path d="M 400,300 L 600,200" stroke="#8B5CF6" stroke-width="1"></path>
+<path d="M 600,200 L 800,150" stroke="#F43F5E" stroke-dasharray="4" stroke-width="2"></path>
+</svg>
+<!-- Simplified Node Positioning -->
+<div class="absolute top-[180px] left-[180px] dependency-node">
+<div class="w-12 h-12 rounded-lg border-2 border-primary bg-primary/10 flex flex-col items-center justify-center p-1 text-center">
+<span class="font-code-sm text-[8px] leading-tight">AUTH-SRV</span>
+</div>
+</div>
+<div class="absolute top-[80px] left-[380px] dependency-node">
+<div class="w-12 h-12 rounded-lg border-2 border-primary bg-primary/10 flex flex-col items-center justify-center p-1 text-center">
+<span class="font-code-sm text-[8px] leading-tight">API-GATE</span>
+</div>
+</div>
+<div class="absolute top-[280px] left-[380px] dependency-node">
+<div class="w-12 h-12 rounded-lg border-2 border-signal-amber bg-signal-amber/10 flex flex-col items-center justify-center p-1 text-center">
+<span class="font-code-sm text-[8px] leading-tight">INV-DB</span>
+</div>
+</div>
+<div class="absolute top-[180px] left-[580px] dependency-node">
+<div class="w-12 h-12 rounded-lg border-2 border-signal-rose bg-signal-rose/10 flex flex-col items-center justify-center p-1 text-center animate-pulse-slow">
+<span class="font-code-sm text-[8px] leading-tight">MSG-QUE</span>
+</div>
+</div>
+<div class="absolute top-[130px] left-[780px] dependency-node">
+<div class="w-12 h-12 rounded-lg border-2 border-primary bg-primary/10 flex flex-col items-center justify-center p-1 text-center">
+<span class="font-code-sm text-[8px] leading-tight">NOTIF-SRV</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Layout for Heatmap and Modules -->
+<div class="grid grid-cols-2 gap-gutter">
+<!-- Risk Heatmap -->
+<section class="bg-surface-container-low border border-border-subtle rounded-xl p-4">
+<h3 class="font-label-caps text-label-caps text-text-muted mb-4">RISK HEATMAP: DRIFT VS COUPLING</h3>
+<div class="grid grid-cols-6 gap-1 h-48">
+<!-- Heatmap Generation - Simplified simulation -->
+<div class="heatmap-cell bg-signal-rose/80 rounded-sm"></div>
+<div class="heatmap-cell bg-signal-rose/60 rounded-sm"></div>
+<div class="heatmap-cell bg-signal-amber/60 rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-signal-rose/60 rounded-sm"></div>
+<div class="heatmap-cell bg-signal-amber/60 rounded-sm"></div>
+<div class="heatmap-cell bg-signal-amber/40 rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-signal-amber/40 rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-primary/20 rounded-sm border border-primary/30"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+<div class="heatmap-cell bg-surface-container-highest rounded-sm"></div>
+</div>
+<div class="flex justify-between mt-2 font-code-sm text-[10px] text-text-muted uppercase">
+<span>Low Coupling</span>
+<span>High Coupling</span>
+</div>
+</section>
+<!-- Shared Module Usage -->
+<section class="bg-surface-container-low border border-border-subtle rounded-xl p-4">
+<h3 class="font-label-caps text-label-caps text-text-muted mb-4">SHARED MODULE DISTRIBUTION</h3>
+<div class="space-y-2 overflow-y-auto max-h-48 custom-scrollbar pr-2">
+<div class="flex items-center justify-between p-2 bg-surface-container-highest rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px] text-primary">deployed_code</span>
+<span class="font-code-sm text-code-sm">@dna/core-logger</span>
+</div>
+<div class="flex gap-2">
+<span class="px-1.5 py-0.5 bg-signal-emerald/20 text-signal-emerald font-code-sm text-[10px] rounded">v2.4.0 (18)</span>
+<span class="px-1.5 py-0.5 bg-signal-amber/20 text-signal-amber font-code-sm text-[10px] rounded">v2.1.0 (6)</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2 bg-surface-container-highest rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px] text-primary">database</span>
+<span class="font-code-sm text-code-sm">@dna/orm-shim</span>
+</div>
+<div class="flex gap-2">
+<span class="px-1.5 py-0.5 bg-signal-emerald/20 text-signal-emerald font-code-sm text-[10px] rounded">v1.9.2 (22)</span>
+<span class="px-1.5 py-0.5 bg-signal-rose/20 text-signal-rose font-code-sm text-[10px] rounded">v1.0.0 (2)</span>
+</div>
+</div>
+<div class="flex items-center justify-between p-2 bg-surface-container-highest rounded-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px] text-primary">security</span>
+<span class="font-code-sm text-code-sm">@dna/auth-sdk</span>
+</div>
+<div class="flex gap-2">
+<span class="px-1.5 py-0.5 bg-signal-emerald/20 text-signal-emerald font-code-sm text-[10px] rounded">v3.0.0 (24)</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Right Inspector Panel -->
+<aside class="w-inspector-width h-screen bg-surface-container-low border-l border-border-subtle flex flex-col">
+<header class="h-row-height-standard flex items-center px-4 border-b border-border-subtle">
+<h2 class="font-label-caps text-label-caps text-text-muted">FLEET DETAILS</h2>
+</header>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+<!-- Aggregate Metrics -->
+<div class="space-y-4">
+<div class="p-3 bg-surface rounded-lg border border-border-subtle">
+<p class="font-label-caps text-[10px] text-text-muted mb-1">TOTAL COGNITIVE LOAD</p>
+<div class="flex items-baseline gap-2">
+<span class="font-code-md text-2xl text-primary">8,422</span>
+<span class="font-code-sm text-code-sm text-signal-rose">↑ 12%</span>
+</div>
+</div>
+<div class="p-3 bg-surface rounded-lg border border-border-subtle">
+<p class="font-label-caps text-[10px] text-text-muted mb-1">AVG DEPENDENCY DEPTH</p>
+<div class="flex items-baseline gap-2">
+<span class="font-code-md text-2xl text-on-surface">4.2</span>
+<span class="font-code-sm text-code-sm text-text-muted">Nodes</span>
+</div>
+</div>
+<div class="p-3 bg-surface rounded-lg border border-signal-rose/30 bg-signal-rose/5">
+<p class="font-label-caps text-[10px] text-signal-rose mb-1">CIRCULAR PATHS DETECTED</p>
+<div class="flex items-baseline gap-2">
+<span class="font-code-md text-2xl text-signal-rose">3</span>
+<span class="material-symbols-outlined text-[18px] text-signal-rose">warning</span>
+</div>
+</div>
+</div>
+<!-- Top Risk Hotspots -->
+<div>
+<h4 class="font-label-caps text-[10px] text-text-muted mb-3 tracking-widest">TOP RISK HOTSPOTS</h4>
+<div class="space-y-2">
+<div class="p-2 border-l-2 border-signal-rose bg-surface-container-highest rounded-r flex justify-between items-center">
+<div>
+<p class="font-code-sm text-on-surface">msg-broker-v2</p>
+<p class="text-[10px] text-text-muted">High Fan-In: 42 deps</p>
+</div>
+<span class="material-symbols-outlined text-[16px] text-text-muted cursor-pointer hover:text-white">chevron_right</span>
+</div>
+<div class="p-2 border-l-2 border-signal-amber bg-surface-container-highest rounded-r flex justify-between items-center">
+<div>
+<p class="font-code-sm text-on-surface">legacy-auth-shim</p>
+<p class="text-[10px] text-text-muted">Protocol Debt</p>
+</div>
+<span class="material-symbols-outlined text-[16px] text-text-muted cursor-pointer hover:text-white">chevron_right</span>
+</div>
+<div class="p-2 border-l-2 border-signal-amber bg-surface-container-highest rounded-r flex justify-between items-center">
+<div>
+<p class="font-code-sm text-on-surface">inventory-worker</p>
+<p class="text-[10px] text-text-muted">Tightly Coupled</p>
+</div>
+<span class="material-symbols-outlined text-[16px] text-text-muted cursor-pointer hover:text-white">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Sync Telemetry -->
+<div class="pt-4 border-t border-border-subtle">
+<h4 class="font-label-caps text-[10px] text-text-muted mb-3">SYNC TELEMETRY</h4>
+<div class="space-y-1">
+<div class="flex justify-between text-[11px]">
+<span class="text-text-muted">LAST SCAN</span>
+<span class="font-code-sm">2023-10-24 14:22:01</span>
+</div>
+<div class="flex justify-between text-[11px]">
+<span class="text-text-muted">HYDRATION</span>
+<span class="font-code-sm text-signal-emerald">SUCCESS (100%)</span>
+</div>
+<div class="flex justify-between text-[11px]">
+<span class="text-text-muted">DATA NODES</span>
+<span class="font-code-sm">12,490 processed</span>
+</div>
+</div>
+</div>
+</div>
+<footer class="p-4 border-t border-border-subtle bg-surface-container">
+<button class="w-full py-2 bg-primary text-on-primary font-label-caps text-label-caps rounded-lg hover:opacity-90 transition-opacity active:opacity-80">
+                TRIGGER FULL RE-SCAN
+            </button>
+</footer>
+</aside>
+<script>
+        // Simple micro-interaction for the heatmap cells
+        document.querySelectorAll('.heatmap-cell').forEach(cell => {
+            cell.addEventListener('mouseenter', () => {
+                // Potential tooltip logic here
+            });
+        });
+
+        // Toggle focus state on repo nodes
+        document.querySelectorAll('.dependency-node').forEach(node => {
+            node.addEventListener('click', function() {
+                this.classList.toggle('ring-2');
+                this.classList.toggle('ring-primary');
+            });
+        });
+    </script>
+</body></html>

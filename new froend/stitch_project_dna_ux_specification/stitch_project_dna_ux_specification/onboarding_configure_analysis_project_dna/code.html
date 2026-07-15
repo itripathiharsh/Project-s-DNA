@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ArchNode | Configure Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "signal-rose": "#F43F5E",
+                        "background": "#131313",
+                        "outline": "#958ea0",
+                        "on-error": "#690005",
+                        "tertiary-container": "#ca801e",
+                        "surface-dim": "#131313",
+                        "on-secondary-fixed": "#1b1b1c",
+                        "secondary-container": "#474746",
+                        "tertiary": "#ffb869",
+                        "text-muted": "#A3A3A3",
+                        "surface-container-low": "#1c1b1b",
+                        "on-background": "#e5e2e1",
+                        "surface-tint": "#d0bcff",
+                        "primary": "#d0bcff",
+                        "border-subtle": "#262626",
+                        "signal-emerald": "#10B981",
+                        "on-secondary-container": "#b7b5b4",
+                        "on-secondary": "#303030",
+                        "error": "#ffb4ab",
+                        "signal-amber": "#F59E0B",
+                        "on-tertiary-fixed": "#2c1700",
+                        "on-surface": "#e5e2e1",
+                        "surface-bright": "#3a3939",
+                        "signal-cyan": "#06B6D4",
+                        "tertiary-fixed-dim": "#ffb869",
+                        "on-primary-fixed-variant": "#5516be",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-surface-variant": "#cbc3d7",
+                        "surface-container-highest": "#353534",
+                        "surface-container-lowest": "#0e0e0e",
+                        "inverse-surface": "#e5e2e1",
+                        "on-secondary-fixed-variant": "#474746",
+                        "primary-fixed": "#e9ddff",
+                        "on-primary-fixed": "#23005c",
+                        "inverse-on-surface": "#313030",
+                        "on-error-container": "#ffdad6",
+                        "outline-variant": "#494454",
+                        "on-tertiary-fixed-variant": "#673d00",
+                        "on-tertiary-container": "#3f2300",
+                        "error-container": "#93000a",
+                        "surface": "#131313",
+                        "on-primary": "#3c0091",
+                        "surface-container": "#201f1f",
+                        "on-tertiary": "#482900",
+                        "on-primary-container": "#340080",
+                        "surface-variant": "#353534",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "primary-container": "#a078ff",
+                        "primary-fixed-dim": "#d0bcff",
+                        "secondary": "#c8c6c5",
+                        "tertiary-fixed": "#ffdcbb",
+                        "surface-container-high": "#2a2a2a",
+                        "inverse-primary": "#6d3bd7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "row-height-dense": "28px",
+                        "inspector-width": "320px",
+                        "gutter": "12px",
+                        "unit": "4px",
+                        "sidebar-width": "260px",
+                        "row-height-standard": "36px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "code-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+                        "headline-md": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 18px;
+        }
+        .code-editor-bg {
+            background-color: #050505;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #161616;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #262626;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #353534;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary selection:text-on-primary-container">
+<!-- Top Navigation Bar (Shared Component) -->
+<header class="bg-background dark:bg-background border-b border-border-subtle flex justify-between items-center px-gutter w-full h-row-height-standard fixed top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-on-surface">ArchNode</span>
+<div class="hidden md:flex items-center gap-6 ml-8">
+<a class="text-on-surface-variant font-body-md hover:bg-surface-container transition-colors px-2 py-1 cursor-pointer active:opacity-80" href="#">Repositories</a>
+<a class="text-on-surface-variant font-body-md hover:bg-surface-container transition-colors px-2 py-1 cursor-pointer active:opacity-80" href="#">Blueprints</a>
+<a class="text-on-surface-variant font-body-md hover:bg-surface-container transition-colors px-2 py-1 cursor-pointer active:opacity-80" href="#">Rulesets</a>
+<a class="text-on-surface-variant font-body-md hover:bg-surface-container transition-colors px-2 py-1 cursor-pointer active:opacity-80" href="#">Analysis</a>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container p-1">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container p-1">help</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container p-1">settings</span>
+<div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center text-[10px] font-bold text-on-primary-container ml-2">JD</div>
+</div>
+</header>
+<!-- Main Content Layout -->
+<main class="pt-row-height-standard flex min-h-screen">
+<!-- Sidebar Navigation (Shared Component Style) -->
+<aside class="hidden md:flex flex-col h-[calc(100vh-36px)] w-sidebar-width bg-surface-container-low dark:bg-surface-container-low border-r border-border-subtle fixed left-0 top-row-height-standard py-gutter">
+<div class="px-4 mb-6">
+<div class="flex items-center gap-3 p-2 bg-surface-container-highest rounded border border-border-subtle">
+<span class="material-symbols-outlined text-primary">architecture</span>
+<div>
+<div class="font-body-sm text-body-sm font-bold text-on-surface leading-tight">Project Alpha</div>
+<div class="text-[10px] text-on-surface-variant uppercase tracking-wider">Technical Architect</div>
+</div>
+</div>
+</div>
+<nav class="flex-grow">
+<div class="px-2 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container transition-all duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined">source</span>
+<span class="font-body-sm text-body-sm">Repositories</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container transition-all duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined">architecture</span>
+<span class="font-body-sm text-body-sm">Blueprints</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container transition-all duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined">gavel</span>
+<span class="font-body-sm text-body-sm">Rulesets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-surface-container-highest text-on-surface border-l-2 border-primary transition-all duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-body-sm text-body-sm">Analysis</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:bg-surface-container transition-all duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined">tune</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+</div>
+</nav>
+<div class="px-2 mt-auto border-t border-border-subtle pt-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-1.5 text-on-surface-variant hover:bg-surface-container text-[12px]" href="#">
+<span class="material-symbols-outlined !text-[16px]">description</span>
+<span>Documentation</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-1.5 text-on-surface-variant hover:bg-surface-container text-[12px]" href="#">
+<span class="material-symbols-outlined !text-[16px]">forum</span>
+<span>Feedback</span>
+</a>
+</div>
+</aside>
+<!-- Main Stage -->
+<section class="flex-grow md:ml-sidebar-width p-8 flex flex-col items-center">
+<div class="max-w-5xl w-full">
+<!-- Onboarding Header -->
+<div class="mb-10 text-center">
+<h1 class="font-headline-lg text-headline-lg mb-2">Configure Analysis Pipeline</h1>
+<p class="text-on-surface-variant max-w-2xl mx-auto">Fine-tune how ArchNode interprets your codebase. Define your architectural boundaries and scanning rules for <code class="bg-surface-container-highest px-1.5 py-0.5 rounded text-primary font-code-sm">dna-core-engine</code>.</p>
+</div>
+<!-- Progress Stepper -->
+<div class="flex justify-center mb-12">
+<div class="flex items-center w-full max-w-md">
+<div class="relative flex flex-col items-center flex-1">
+<div class="w-8 h-8 rounded-full bg-signal-emerald text-background flex items-center justify-center font-bold mb-2">
+<span class="material-symbols-outlined !text-[18px]">check</span>
+</div>
+<span class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">Connect</span>
+</div>
+<div class="flex-grow h-[2px] bg-primary mb-6"></div>
+<div class="relative flex flex-col items-center flex-1">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold mb-2 ring-4 ring-primary/20">2</div>
+<span class="text-[11px] font-bold uppercase tracking-widest text-primary">Configure</span>
+</div>
+<div class="flex-grow h-[2px] bg-surface-container-highest mb-6"></div>
+<div class="relative flex flex-col items-center flex-1">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold mb-2">3</div>
+<span class="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">Review</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Configuration Interface -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Repository Settings Panel -->
+<div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+<!-- Source Context -->
+<div class="bg-surface-container-low border border-border-subtle p-5 rounded-lg">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">source</span>
+<h3 class="font-headline-md text-headline-md">Source Context</h3>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block font-label-caps text-label-caps text-text-muted mb-2">Target Branch</label>
+<div class="relative group">
+<select class="w-full bg-surface-container-lowest border border-border-subtle text-on-surface px-3 py-2 rounded focus:border-primary outline-none appearance-none cursor-pointer">
+<option>main</option>
+<option>develop</option>
+<option>staging</option>
+<option>release/v2.4</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2.5 pointer-events-none text-on-surface-variant">expand_more</span>
+</div>
+</div>
+<div class="p-3 bg-surface-container rounded border border-border-subtle">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-caps text-label-caps text-text-muted">Repository Stats</span>
+<span class="material-symbols-outlined text-signal-cyan !text-[16px]">info</span>
+</div>
+<div class="flex justify-between items-end">
+<span class="text-headline-md font-code-md">248k</span>
+<span class="text-[10px] text-on-surface-variant">LOC Scan Est.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Ruleset Selection -->
+<div class="bg-surface-container-low border border-border-subtle p-5 rounded-lg">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">gavel</span>
+<h3 class="font-headline-md text-headline-md">Architecture Model</h3>
+</div>
+<div class="space-y-2">
+<div class="flex items-start gap-3 p-3 bg-surface-container-highest border-l-2 border-primary rounded-r transition-all cursor-pointer">
+<div class="mt-1">
+<input checked="" class="text-primary focus:ring-0 focus:ring-offset-0 bg-transparent border-border-subtle" name="ruleset" type="radio"/>
+</div>
+<div>
+<div class="font-body-sm font-bold text-on-surface">Clean Architecture</div>
+<div class="text-[11px] text-on-surface-variant">Strict layer separation (Domain, App, Infrastructure).</div>
+</div>
+</div>
+<div class="flex items-start gap-3 p-3 hover:bg-surface-container transition-all cursor-pointer rounded border border-transparent">
+<div class="mt-1">
+<input class="text-primary focus:ring-0 focus:ring-offset-0 bg-transparent border-border-subtle" name="ruleset" type="radio"/>
+</div>
+<div>
+<div class="font-body-sm font-bold text-on-surface">Microservices</div>
+<div class="text-[11px] text-on-surface-variant">High-density boundary validation for service decoupling.</div>
+</div>
+</div>
+<div class="flex items-start gap-3 p-3 hover:bg-surface-container transition-all cursor-pointer rounded border border-transparent">
+<div class="mt-1">
+<input class="text-primary focus:ring-0 focus:ring-offset-0 bg-transparent border-border-subtle" name="ruleset" type="radio"/>
+</div>
+<div>
+<div class="font-body-sm font-bold text-on-surface">Modular Monolith</div>
+<div class="text-[11px] text-on-surface-variant">Internal module encapsulation and public API enforcement.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Filter / Editor Panel -->
+<div class="col-span-12 lg:col-span-8">
+<div class="bg-surface-container-low border border-border-subtle rounded-lg flex flex-col h-full overflow-hidden">
+<div class="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">filter_alt</span>
+<h3 class="font-headline-md text-headline-md">Filter Configuration</h3>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container-highest hover:bg-surface-bright text-on-surface font-label-caps text-label-caps px-3 py-1.5 rounded flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined !text-[14px]">save</span>
+                                        Export JSON
+                                    </button>
+</div>
+</div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-2 min-h-[400px]">
+<!-- Include Patterns -->
+<div class="border-b md:border-b-0 md:border-r border-border-subtle flex flex-col">
+<div class="p-4 bg-surface-container-lowest/50 border-b border-border-subtle flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-signal-emerald flex items-center gap-1">
+<span class="material-symbols-outlined !text-[14px]">add_circle</span>
+                                            Include Patterns
+                                        </span>
+<span class="material-symbols-outlined text-on-surface-variant !text-[16px] cursor-help" title="Glob patterns for files to be analyzed">help</span>
+</div>
+<div class="flex-grow code-editor-bg p-4 font-code-sm text-code-sm leading-6">
+<div class="flex gap-4">
+<div class="text-text-muted/40 select-none text-right w-6">1</div>
+<div class="text-signal-emerald">src/**/*.ts</div>
+</div>
+<div class="flex gap-4">
+<div class="text-text-muted/40 select-none text-right w-6">2</div>
+<div class="text-signal-emerald">src/**/*.tsx</div>
+</div>
+<div class="flex gap-4">
+<div class="text-text-muted/40 select-none text-right w-6">3</div>
+<div class="text-signal-emerald">lib/internal/core/**/*</div>
+</div>
+<div class="flex gap-4 group">
+<div class="text-text-muted/40 select-none text-right w-6">4</div>
+<div class="relative w-full">
+<span class="text-on-surface animate-pulse">|</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Exclude Patterns -->
+<div class="flex flex-col">
+<div class="p-4 bg-surface-container-lowest/50 border-b border-border-subtle flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-signal-rose flex items-center gap-1">
+<span class="material-symbols-outlined !text-[14px]">remove_circle</span>
+                                            Exclude Patterns
+                                        </span>
+<span class="material-symbols-outlined text-on-surface-variant !text-[16px] cursor-help" title="Files matched here will be ignored even if included">help</span>
+</div>
+<div class="flex-grow code-editor-bg p-4 font-code-sm text-code-sm leading-6">
+<div class="flex gap-4">
+<div class="text-text-muted/40 select-none text-right w-6">1</div>
+<div class="text-signal-rose">**/node_modules/**</div>
+</div>
+<div class="flex gap-4">
+<div class="text-text-muted/40 select-none text-right w-6">2</div>
+<div class="text-signal-rose">**/*.test.ts</div>
+</div>
+<div class="flex gap-4">
+<div class="text-text-muted/40 select-none text-right w-6">3</div>
+<div class="text-signal-rose">**/*.spec.ts</div>
+</div>
+<div class="flex gap-4">
+<div class="text-text-muted/40 select-none text-right w-6">4</div>
+<div class="text-signal-rose">dist/**</div>
+</div>
+<div class="flex gap-4">
+<div class="text-text-muted/40 select-none text-right w-6">5</div>
+<div class="text-signal-rose">docs/**</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Editor Footer -->
+<div class="bg-surface-container px-4 py-2 border-t border-border-subtle flex justify-between items-center text-[11px] text-on-surface-variant font-code-sm">
+<div class="flex gap-4">
+<span>UTF-8</span>
+<span>Glob Syntax</span>
+</div>
+<div class="flex gap-4">
+<span>Ln 4, Col 1</span>
+<span>Spaces: 2</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="mt-12 flex justify-between items-center pt-6 border-t border-border-subtle">
+<button class="flex items-center gap-2 px-6 py-2.5 rounded border border-border-subtle hover:bg-surface-container transition-colors text-on-surface font-bold">
+<span class="material-symbols-outlined">arrow_back</span>
+                        Back
+                    </button>
+<div class="flex gap-4">
+<button class="px-6 py-2.5 rounded border border-border-subtle text-on-surface font-bold hover:bg-surface-container transition-colors">
+                            Dry Run Analysis
+                        </button>
+<button class="bg-primary text-on-primary px-10 py-2.5 rounded font-bold hover:opacity-90 transition-all flex items-center gap-2">
+                            Next: Review
+                            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Inspector Panel (Shared Style) -->
+<aside class="hidden xl:flex flex-col h-[calc(100vh-36px)] w-inspector-width bg-surface-container-low border-l border-border-subtle fixed right-0 top-row-height-standard overflow-y-auto custom-scrollbar">
+<div class="p-gutter border-b border-border-subtle">
+<h4 class="font-label-caps text-label-caps text-text-muted mb-4 uppercase tracking-widest">Selected Ruleset Details</h4>
+<div class="p-4 bg-surface-container-highest rounded border border-border-subtle">
+<div class="text-primary font-bold mb-1">Clean Architecture</div>
+<p class="text-body-sm text-body-sm text-on-surface-variant mb-4">Enforces dependency inversion principle where inner circles (Domain) cannot depend on outer circles (Infrastructure).</p>
+<div class="space-y-3">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-signal-emerald !text-[16px]">task_alt</span>
+<span class="text-[11px]">Layer Isolation Level: High</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-signal-emerald !text-[16px]">task_alt</span>
+<span class="text-[11px]">Inversion Check: Enabled</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-signal-emerald !text-[16px]">task_alt</span>
+<span class="text-[11px]">Interface Compliance: On</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-gutter border-b border-border-subtle">
+<h4 class="font-label-caps text-label-caps text-text-muted mb-4 uppercase tracking-widest">Configuration Health</h4>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-[11px] mb-1">
+<span>Analysis Precision</span>
+<span class="text-signal-emerald">94%</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-signal-emerald w-[94%] h-full"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[11px] mb-1">
+<span>Excluded Noise</span>
+<span class="text-signal-cyan">18%</span>
+</div>
+<div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-signal-cyan w-[18%] h-full"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-gutter mt-auto">
+<div class="bg-surface-container-highest/40 p-4 rounded border border-border-subtle text-[11px] text-on-surface-variant italic">
+                    "Tip: Using broad glob patterns like <code class="text-primary">**/*</code> may increase processing time for large monoliths. Try narrowing patterns to specific core directories."
+                </div>
+</div>
+</aside>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simple hover effect for configuration options
+        document.querySelectorAll('input[name="ruleset"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                document.querySelectorAll('input[name="ruleset"]').forEach(i => {
+                    i.closest('.flex.items-start').classList.remove('bg-surface-container-highest', 'border-primary');
+                    i.closest('.flex.items-start').classList.add('hover:bg-surface-container', 'border-transparent');
+                });
+                
+                if(e.target.checked) {
+                    const container = e.target.closest('.flex.items-start');
+                    container.classList.remove('hover:bg-surface-container', 'border-transparent');
+                    container.classList.add('bg-surface-container-highest', 'border-primary', 'border-l-2');
+                }
+            });
+        });
+
+        // Simulating tooltip or interaction logic
+        const tooltips = {
+            'help': 'This field uses standard Glob syntax (e.g., **/*.js)'
+        };
+    </script>
+</body></html>

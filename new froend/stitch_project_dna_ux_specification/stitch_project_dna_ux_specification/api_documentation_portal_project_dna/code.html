@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Project DNA | API Documentation Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#5516be",
+                    "error-container": "#93000a",
+                    "primary-fixed": "#e9ddff",
+                    "surface-container-highest": "#353534",
+                    "primary-container": "#a078ff",
+                    "signal-emerald": "#10B981",
+                    "signal-amber": "#F59E0B",
+                    "on-background": "#e5e2e1",
+                    "on-tertiary-container": "#3f2300",
+                    "secondary": "#c8c6c5",
+                    "on-secondary-container": "#b7b5b4",
+                    "surface": "#131313",
+                    "error": "#ffb4ab",
+                    "on-primary": "#3c0091",
+                    "primary-fixed-dim": "#d0bcff",
+                    "surface-dim": "#131313",
+                    "on-primary-fixed": "#23005c",
+                    "on-tertiary": "#482900",
+                    "surface-tint": "#d0bcff",
+                    "outline-variant": "#494454",
+                    "inverse-surface": "#e5e2e1",
+                    "surface-container-lowest": "#0e0e0e",
+                    "border-subtle": "#262626",
+                    "on-secondary-fixed": "#1b1b1c",
+                    "text-muted": "#A3A3A3",
+                    "surface-container": "#201f1f",
+                    "background": "#131313",
+                    "on-secondary": "#303030",
+                    "primary": "#d0bcff",
+                    "inverse-primary": "#6d3bd7",
+                    "on-surface": "#e5e2e1",
+                    "surface-variant": "#353534",
+                    "surface-container-high": "#2a2a2a",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-container": "#340080",
+                    "surface-container-low": "#1c1b1b",
+                    "secondary-fixed-dim": "#c8c6c5",
+                    "outline": "#958ea0",
+                    "on-secondary-fixed-variant": "#474746",
+                    "tertiary-container": "#ca801e",
+                    "tertiary-fixed-dim": "#ffb869",
+                    "secondary-fixed": "#e5e2e1",
+                    "on-surface-variant": "#cbc3d7",
+                    "inverse-on-surface": "#313030",
+                    "surface-bright": "#3a3939",
+                    "on-error": "#690005",
+                    "tertiary": "#ffb869",
+                    "tertiary-fixed": "#ffdcbb",
+                    "signal-cyan": "#06B6D4",
+                    "signal-rose": "#F43F5E",
+                    "secondary-container": "#474746",
+                    "on-tertiary-fixed": "#2c1700",
+                    "on-tertiary-fixed-variant": "#673d00"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "row-height-standard": "36px",
+                    "row-height-dense": "28px",
+                    "gutter": "12px",
+                    "inspector-width": "320px",
+                    "sidebar-width": "260px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "code-md": ["JetBrains Mono"],
+                    "label-caps": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "code-sm": ["JetBrains Mono"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "label-caps": ["11px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "headline-md": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "code-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 18px;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0D0D0D;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262626;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #353534;
+        }
+        .code-syntax-keyword { color: #d0bcff; }
+        .code-syntax-string { color: #10B981; }
+        .code-syntax-type { color: #06B6D4; }
+        .code-syntax-comment { color: #666; font-style: italic; }
+    </style>
+</head>
+<body class="font-body-md text-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-full w-sidebar-width bg-surface-container-low border-r border-border-subtle flex flex-col py-4 z-50">
+<div class="px-4 mb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Project DNA</h1>
+<p class="text-[10px] text-text-muted font-label-caps tracking-widest mt-1">V2.4.0-STABLE</p>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Active Tab: Documentation -->
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-label-caps text-label-caps">Explorer</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="font-label-caps text-label-caps">Graph</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="font-label-caps text-label-caps">Intelligence</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="font-label-caps text-label-caps">Risk Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="library_books">library_books</span>
+<span class="font-label-caps text-label-caps">Knowledge</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-label-caps text-label-caps">Evolution</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 bg-surface-container-highest text-primary border-l-2 border-primary transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="api">api</span>
+<span class="font-label-caps text-label-caps">Documentation</span>
+</a>
+</nav>
+<div class="mt-auto px-2 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-muted hover:bg-surface-container-high transition-colors duration-150 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-caps text-label-caps">Support</span>
+</a>
+</div>
+</aside>
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-var(--sidebar-width))] h-row-height-standard bg-surface border-b border-border-subtle flex justify-between items-center px-gutter z-40">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md font-black text-on-surface">Architectural API</span>
+<div class="flex gap-4 items-center h-full">
+<a class="font-body-md text-body-md text-primary border-b-2 border-primary pb-1" href="#">Mainframe</a>
+<a class="font-body-md text-body-md text-text-muted hover:text-on-surface transition-all" href="#">Clusters</a>
+<a class="font-body-md text-body-md text-text-muted hover:text-on-surface transition-all" href="#">Deployments</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-3 py-1 bg-surface-container-low border border-border-subtle rounded text-body-sm hover:bg-surface-container-high transition-all active:scale-95">Export</button>
+<button class="px-3 py-1 bg-primary text-on-primary font-bold rounded text-body-sm hover:opacity-90 transition-all active:scale-95">Deploy</button>
+<span class="material-symbols-outlined text-text-muted cursor-pointer hover:text-on-surface transition-all" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-text-muted cursor-pointer hover:text-on-surface transition-all" data-icon="account_circle">account_circle</span>
+</div>
+</header>
+<!-- Main Content Layout -->
+<main class="ml-sidebar-width pt-row-height-standard pr-inspector-width min-h-screen flex">
+<!-- Center Stage: Documentation Body -->
+<div class="flex-1 border-r border-border-subtle bg-surface">
+<!-- Documentation Hero -->
+<div class="p-8 border-b border-border-subtle bg-surface-container-lowest/50 relative overflow-hidden">
+<div class="relative z-10">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Architectural API Reference</h2>
+<p class="text-text-muted max-w-2xl font-body-md">
+                        The DNA Architectural API provides programmatic access to the Knowledge Graph, Analysis Engine, and multi-tenant schema exports. Built for high-frequency synchronization and deterministic resolution.
+                    </p>
+</div>
+<!-- Subtle Background Grid/Shader -->
+<div class="absolute top-0 right-0 w-64 h-full opacity-10 pointer-events-none">
+
+</div>
+</div>
+<!-- API Sections: Three Column Layout -->
+<div class="divide-y divide-border-subtle">
+<!-- Section: Knowledge Graph API -->
+<section class="grid grid-cols-12 gap-0 group">
+<!-- Col 1: Sub-Nav/Method -->
+<div class="col-span-2 p-4 bg-surface-container-lowest/30 border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted block mb-4">METHODS</span>
+<div class="space-y-3">
+<div class="flex items-center gap-2 group/item cursor-pointer">
+<span class="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded">GET</span>
+<span class="font-code-sm text-code-sm text-on-surface group-hover/item:text-primary transition-colors">/graph/nodes</span>
+</div>
+<div class="flex items-center gap-2 group/item cursor-pointer">
+<span class="bg-signal-emerald/20 text-signal-emerald text-[10px] font-bold px-1.5 py-0.5 rounded">POST</span>
+<span class="font-code-sm text-code-sm text-on-surface group-hover/item:text-primary transition-colors">/graph/query</span>
+</div>
+<div class="flex items-center gap-2 group/item cursor-pointer">
+<span class="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded">GET</span>
+<span class="font-code-sm text-code-sm text-on-surface group-hover/item:text-primary transition-colors">/graph/schema</span>
+</div>
+</div>
+</div>
+<!-- Col 2: Descriptions -->
+<div class="col-span-5 p-6">
+<h3 class="font-headline-md text-headline-md mb-2">Knowledge Graph API</h3>
+<p class="text-body-sm text-text-muted mb-4">
+                            Access the underlying semantic web of dependencies. Query nodes using our GraphQL-lite implementation or perform structural traversals.
+                        </p>
+<div class="space-y-4">
+<div>
+<h4 class="font-label-caps text-label-caps text-on-surface mb-2">QUERY PARAMETERS</h4>
+<div class="space-y-2">
+<div class="flex items-start justify-between py-2 border-b border-border-subtle">
+<div>
+<span class="font-code-sm text-code-sm text-primary">depth</span>
+<span class="text-[10px] text-text-muted ml-2 font-code-sm">integer</span>
+</div>
+<p class="text-[11px] text-text-muted italic">Traversal recursion limit (Default: 3)</p>
+</div>
+<div class="flex items-start justify-between py-2 border-b border-border-subtle">
+<div>
+<span class="font-code-sm text-code-sm text-primary">filter</span>
+<span class="text-[10px] text-text-muted ml-2 font-code-sm">string</span>
+</div>
+<p class="text-[11px] text-text-muted italic">Node category filtering predicate</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Col 3: Code Examples -->
+<div class="col-span-5 p-4 bg-surface-container-low border-l border-border-subtle flex flex-col">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-caps text-label-caps text-text-muted">REQUEST EXAMPLE</span>
+<span class="material-symbols-outlined text-text-muted text-sm cursor-pointer hover:text-on-surface" data-icon="content_copy">content_copy</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded border border-border-subtle flex-1 overflow-auto max-h-64">
+<pre class="font-code-sm text-code-sm leading-relaxed"><span class="code-syntax-keyword">curl</span> -X POST <span class="code-syntax-string">"https://api.dna.v2/graph/query"</span> \
+  -H <span class="code-syntax-string">"Authorization: Bearer $DNA_KEY"</span> \
+  -d <span class="code-syntax-string">'{
+    "traverse": "dependency",
+    "origin": "node_7721",
+    "recursive": true
+  }'</span></pre>
+</div>
+</div>
+</section>
+<!-- Section: Analysis Engine SDK -->
+<section class="grid grid-cols-12 gap-0 group">
+<div class="col-span-2 p-4 bg-surface-container-lowest/30 border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted block mb-4">LIBRARIES</span>
+<div class="space-y-3">
+<div class="flex items-center gap-2 group/item cursor-pointer">
+<span class="material-symbols-outlined text-signal-cyan" data-icon="terminal">terminal</span>
+<span class="font-code-sm text-code-sm text-on-surface group-hover/item:text-primary transition-colors">NodeJS SDK</span>
+</div>
+<div class="flex items-center gap-2 group/item cursor-pointer">
+<span class="material-symbols-outlined text-signal-rose" data-icon="terminal">terminal</span>
+<span class="font-code-sm text-code-sm text-on-surface group-hover/item:text-primary transition-colors">Python SDK</span>
+</div>
+</div>
+</div>
+<div class="col-span-5 p-6">
+<h3 class="font-headline-md text-headline-md mb-2">Analysis Engine SDK</h3>
+<p class="text-body-sm text-text-muted mb-4">
+                            Leverage the local analysis engine for real-time risk assessment without data exfiltration.
+                        </p>
+<div class="p-3 bg-tertiary-container/10 border-l-2 border-tertiary-container">
+<p class="text-[11px] text-tertiary-container font-semibold">Note: SDK requires DNA Local Runtime v1.2+</p>
+</div>
+</div>
+<div class="col-span-5 p-4 bg-surface-container-low border-l border-border-subtle flex flex-col">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-caps text-label-caps text-text-muted">TYPESCRIPT USAGE</span>
+<span class="material-symbols-outlined text-text-muted text-sm" data-icon="check_circle">check_circle</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded border border-border-subtle flex-1 overflow-auto max-h-64">
+<pre class="font-code-sm text-code-sm leading-relaxed"><span class="code-syntax-keyword">import</span> { DNAEngine } <span class="code-syntax-keyword">from</span> <span class="code-syntax-string">'@dna/sdk'</span>;
+
+<span class="code-syntax-keyword">const</span> engine = <span class="code-syntax-keyword">new</span> <span class="code-syntax-type">DNAEngine</span>({
+  apiKey: process.env.DNA_API_KEY,
+  environment: <span class="code-syntax-string">'production'</span>
+});
+
+<span class="code-syntax-keyword">const</span> risk = <span class="code-syntax-keyword">await</span> engine.analyze(<span class="code-syntax-string">'cluster_alpha'</span>);</pre>
+</div>
+</div>
+</section>
+<!-- Section: Exported Schemas / Schema Explorer -->
+<section class="grid grid-cols-12 gap-0 group">
+<div class="col-span-2 p-4 bg-surface-container-lowest/30 border-r border-border-subtle">
+<span class="font-label-caps text-[10px] text-text-muted block mb-4">SCHEMAS</span>
+<div class="space-y-3">
+<div class="flex items-center gap-2 group/item cursor-pointer text-primary">
+<span class="material-symbols-outlined" data-icon="data_object">data_object</span>
+<span class="font-code-sm text-code-sm font-bold">DependencyGraph</span>
+</div>
+<div class="flex items-center gap-2 group/item cursor-pointer">
+<span class="material-symbols-outlined text-text-muted" data-icon="data_object">data_object</span>
+<span class="font-code-sm text-code-sm text-on-surface group-hover/item:text-primary transition-colors">RiskMetrics</span>
+</div>
+</div>
+</div>
+<div class="col-span-10 p-6">
+<h3 class="font-headline-md text-headline-md mb-6">Schema Explorer: <span class="text-primary font-code-md">DependencyGraph</span></h3>
+<div class="bg-surface-container-low rounded border border-border-subtle overflow-hidden">
+<div class="flex items-center justify-between px-4 py-2 bg-surface-container-high/50 border-b border-border-subtle">
+<div class="flex gap-4">
+<span class="font-label-caps text-[10px] text-primary cursor-pointer border-b border-primary">TYPESCRIPT</span>
+<span class="font-label-caps text-[10px] text-text-muted cursor-pointer hover:text-on-surface transition-colors">JSON SCHEMA</span>
+<span class="font-label-caps text-[10px] text-text-muted cursor-pointer hover:text-on-surface transition-colors">PROTOBUF</span>
+</div>
+<span class="font-code-sm text-[10px] text-text-muted uppercase">READ-ONLY</span>
+</div>
+<div class="p-6 font-code-md text-code-md bg-surface-container-lowest">
+<div class="grid grid-cols-1 gap-1">
+<div><span class="code-syntax-keyword">interface</span> <span class="code-syntax-type">DependencyGraph</span> {</div>
+<div class="pl-4"><span class="code-syntax-keyword">id</span>: <span class="code-syntax-type">uuid</span>; <span class="code-syntax-comment">// Unique identifier for the graph instance</span></div>
+<div class="pl-4"><span class="code-syntax-keyword">version</span>: <span class="code-syntax-type">string</span>; <span class="code-syntax-comment">// Semver of the DNA engine used</span></div>
+<div class="pl-4"><span class="code-syntax-keyword">timestamp</span>: <span class="code-syntax-type">ISO8601</span>;</div>
+<div class="pl-4"><span class="code-syntax-keyword">nodes</span>: {</div>
+<div class="pl-8"><span class="code-syntax-keyword">id</span>: <span class="code-syntax-type">string</span>;</div>
+<div class="pl-8"><span class="code-syntax-keyword">type</span>: <span class="code-syntax-string">'service'</span> | <span class="code-syntax-string">'database'</span> | <span class="code-syntax-string">'queue'</span>;</div>
+<div class="pl-8"><span class="code-syntax-keyword">metadata</span>: <span class="code-syntax-type">Record</span>&lt;<span class="code-syntax-type">string</span>, <span class="code-syntax-type">any</span>&gt;;</div>
+<div class="pl-8"><span class="code-syntax-keyword">riskScore</span>: <span class="code-syntax-type">number</span>; <span class="code-syntax-comment">// Range 0.0 - 1.0</span></div>
+<div class="pl-4">}[];</div>
+<div class="pl-4"><span class="code-syntax-keyword">edges</span>: {</div>
+<div class="pl-8"><span class="code-syntax-keyword">source</span>: <span class="code-syntax-type">string</span>;</div>
+<div class="pl-8"><span class="code-syntax-keyword">target</span>: <span class="code-syntax-type">string</span>;</div>
+<div class="pl-8"><span class="code-syntax-keyword">latency_ms</span>: <span class="code-syntax-type">number</span>;</div>
+<div class="pl-4">}[];</div>
+<div>}</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Inspector Panel (Right) -->
+<aside class="fixed right-0 top-row-height-standard w-inspector-width h-[calc(100%-var(--row-height-standard))] bg-surface-container-low border-l border-border-subtle p-gutter z-30 flex flex-col gap-6 overflow-y-auto">
+<section>
+<h4 class="font-headline-md text-headline-md text-on-surface mb-4">Integration Details</h4>
+<div class="space-y-4">
+<!-- Authentication Card -->
+<div class="bg-surface-container p-4 border border-border-subtle rounded-lg">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-caps text-label-caps text-text-muted">AUTHENTICATION</span>
+<span class="px-2 py-0.5 bg-signal-emerald/20 text-signal-emerald text-[9px] font-bold rounded-full">ACTIVE</span>
+</div>
+<p class="text-body-sm mb-2 text-on-surface-variant">Method: <span class="font-code-sm text-primary">JWT / OAuth 2.0</span></p>
+<button class="w-full text-left font-code-sm text-code-sm bg-surface-container-lowest border border-border-subtle p-2 rounded flex justify-between items-center hover:border-primary transition-colors">
+<span>••••••••••••••••</span>
+<span class="material-symbols-outlined text-sm" data-icon="visibility">visibility</span>
+</button>
+</div>
+<!-- Rate Limits -->
+<div class="bg-surface-container p-4 border border-border-subtle rounded-lg">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-caps text-label-caps text-text-muted">RATE LIMITS</span>
+<span class="text-xs text-on-surface-variant">42% Used</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-highest rounded-full overflow-hidden mb-2">
+<div class="h-full bg-primary" style="width: 42%;"></div>
+</div>
+<div class="flex justify-between text-[10px] text-text-muted font-code-sm">
+<span>12,642 / 30,000 req/hr</span>
+<span>Reset in 22m</span>
+</div>
+</div>
+<!-- Live Sync -->
+<div class="bg-surface-container p-4 border border-border-subtle rounded-lg">
+<div class="flex items-center gap-2 mb-2">
+<div class="w-2 h-2 rounded-full bg-signal-emerald animate-pulse"></div>
+<span class="font-label-caps text-label-caps text-on-surface">LIVE SYNC STATUS</span>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-4">
+<div class="text-center p-2 bg-surface-container-low rounded">
+<p class="text-[10px] text-text-muted mb-1">UPSTREAM</p>
+<p class="font-code-md text-on-surface">14ms</p>
+</div>
+<div class="text-center p-2 bg-surface-container-low rounded">
+<p class="text-[10px] text-text-muted mb-1">DOWNSTREAM</p>
+<p class="font-code-md text-on-surface">22ms</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center justify-between mb-4">
+<h4 class="font-label-caps text-label-caps text-text-muted">API LATENCY (24H)</h4>
+<span class="text-primary font-code-sm text-[10px]">AVG 18.4ms</span>
+</div>
+<!-- Sparkline Placeholder -->
+<div class="h-24 w-full bg-surface-container-lowest border border-border-subtle rounded flex items-end px-1 gap-0.5 relative group overflow-hidden">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+<div class="flex-1 bg-primary/20 h-[40%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[55%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[45%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[30%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[60%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[75%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[50%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[40%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[45%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[55%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[80%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[35%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[25%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[50%] rounded-t-sm hover:bg-primary transition-all"></div>
+<div class="flex-1 bg-primary/20 h-[60%] rounded-t-sm hover:bg-primary transition-all"></div>
+</div>
+</section>
+<!-- Bottom Action/Help -->
+<div class="mt-auto space-y-2">
+<button class="w-full py-2 bg-surface-container-high border border-border-subtle text-body-sm text-on-surface hover:bg-surface-container-highest transition-colors rounded flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="terminal">terminal</span>
+                    Open Sandbox
+                </button>
+<button class="w-full py-2 text-text-muted hover:text-on-surface transition-colors text-[11px] font-label-caps uppercase tracking-widest">
+                    Download Postman Collection
+                </button>
+</div>
+</aside>
+</main>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('.group\\/item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.transform = 'translateX(4px)';
+                item.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+            });
+            item.addEventListener('mouseleave', () => {
+                item.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
+</body></html>

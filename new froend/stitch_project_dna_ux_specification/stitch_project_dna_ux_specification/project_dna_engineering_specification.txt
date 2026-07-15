@@ -1,0 +1,116 @@
+# Project DNA: Engineering Implementation Specification
+
+## 1. Product Architecture & Page Specifications
+
+### Dashboard Overview
+- **Purpose**: High-level strategic overview of repository health and risk.
+- **Route**: `/dashboard`
+- **User Flow**: Entry point -> View KPIs -> Identify Hotspots -> Click to Drill Down.
+- **Components Used**: `SideNavBar`, `TopNavBar`, `MetricCard`, `HeatmapGrid`, `TrendChart`, `InspectorPanel`.
+- **State Management**: Global filter state (Time range), active node selection for Inspector.
+- **API Endpoints**: `GET /api/v1/metrics/summary`, `GET /api/v1/analytics/hotspots`, `GET /api/v1/analytics/trends`.
+- **Data Model**: `{ cognitive_load: number, health_score: number, hotspots: Array<Node>, trend_data: Array<Point> }`
+- **Loading/Empty/Error States**: Skeleton cards for initial load; "No repositories connected" empty state; "Data sync failed" error banner.
+- **Interactions**: Click heatmap cell to open file in Explorer; hover sparklines for precise values.
+- **Keyboard Shortcuts**: `Cmd+1` (Navigate to Dashboard), `R` (Refresh data).
+
+### Graph Workspace (Flagship)
+- **Purpose**: Interactive WebGL-based visualization of system architecture.
+- **Route**: `/graph`
+- **User Flow**: Open Workspace -> Search/Select Node -> Inspect Dependencies -> Run Refactor.
+- **Components Used**: `WebGLGraphCanvas`, `NodeSearch`, `InspectorPanel`, `ControlOverlay`.
+- **State Management**: Canvas viewport state (Zoom/Pan), node focus/selection, filter layers.
+- **API Endpoints**: `GET /api/v1/graph/nodes`, `GET /api/v1/graph/edges`, `POST /api/v1/refactor/analyze`.
+- **Data Model**: `{ nodes: Array<Node>, edges: Array<Edge>, telemetry: Object }`
+- **Animations**: Force-directed layout transitions, spring-based zoom, node glow on selection.
+- **Keyboard Shortcuts**: `Cmd+3` (Navigate to Graph), `F` (Find node), `Space` (Hold to pan).
+
+### Repository Explorer
+- **Purpose**: High-density file and symbol management with IDE-grade metadata.
+- **Route**: `/explorer`
+- **User Flow**: Browse tree -> select file -> view metrics -> open in editor.
+- **Components Used**: `FileTreeGrid`, `MetricColumn`, `BreadcrumbHeader`, `CodePreviewSnippet`.
+- **State Management**: Tree expansion state, selected file ID, column sorting.
+- **API Endpoints**: `GET /api/v1/repo/tree`, `GET /api/v1/file/{id}/metrics`.
+- **Responsive Behavior**: Tree collapses to icon-only on narrow desktop view; full collapse on mobile.
+
+---
+
+## 2. Design System Specification
+
+### Color Tokens (The "DNA" Palette)
+- **Surface-Base**: `#0D0D0D` (Deep charcoal)
+- **Surface-Container**: `#15121B`
+- **Primary (DNA Purple)**: `#8B5CF6`
+- **Accent-Healthy**: `#10B981` (Emerald)
+- **Accent-Warning**: `#F59E0B` (Amber)
+- **Accent-Critical**: `#F43F5E` (Rose)
+- **Accent-Info**: `#06B6D4` (Cyan)
+
+### Typography (Tailwind Config)
+- **UI Font**: `Inter`, system-sans-serif
+- **Code/Data Font**: `JetBrains Mono`, `Geist Mono`
+- **Scale**:
+  - `Display`: 48px/1.1 (Bold)
+  - `Headline`: 24px/1.2 (Semibold)
+  - `Body-SM`: 13px/1.4 (Regular)
+  - `Code-XS`: 11px/1.5 (Monospace)
+
+### Radius & Shadows
+- **Radius-SM**: `4px` (Components)
+- **Radius-MD**: `8px` (Cards/Modals)
+- **Elevation**: `Flat` aesthetic with thin border (`1px border-white/10`) instead of heavy shadows.
+
+---
+
+## 3. Component Inventory
+
+### Global Navigation
+- `SideNavBar`: Fixed left, includes project switcher, primary links, and user profile.
+- `TopNavBar`: Contextual breadcrumbs, search entry, and primary actions (Deploy/Run).
+
+### Data Visualization
+- `GraphNode`: WebGL rendered or SVG-based node with status indicator.
+- `Sparkline`: Inline 7-day trend chart for metrics.
+- `Heatmap`: Churn vs Complexity grid.
+
+### Feedback & Overlays
+- `CommandPalette`: `Cmd+K` modal with fuzzy search and semantic AI queries.
+- `TaskMonitor`: Bottom-right tray for background analysis progress.
+- `DiffViewer`: Side-by-side code comparison with architectural impact overlays.
+
+---
+
+## 4. Frontend Implementation Order
+
+### Phase 1: Foundation (Week 1)
+- Setup Tailwind config with DNA color tokens and typography.
+- Implementation of base primitives: `Button`, `Badge`, `IconButton`, `Skeleton`.
+- Base Layout Shell (Grid/Flex wrappers).
+
+### Phase 2: Layout & Navigation (Week 2)
+- Global `SideNavBar` with active/hover state logic.
+- `TopNavBar` with breadcrumb logic and `CommandPalette` trigger.
+- Persistent `TaskMonitor` overlay.
+
+### Phase 3: Shared Components (Week 3)
+- `DataTable` with virtualized scrolling for high-density Repo Explorer.
+- `InspectorPanel` slide-out logic.
+- `ChartLibrary` wrapper for sparklines and heatmaps.
+
+### Phase 4: Core Workspaces (Week 4-5)
+- **Dashboard**: KPI card layout and trend visualization.
+- **Explorer**: File tree integration with metadata columns.
+- **Graph**: WebGL canvas integration (using custom `<webgl-shader>` wrapper).
+
+### Phase 5: Integrations (Week 6)
+- API service layer for live data hydration.
+- Real-time notification system (Toasts/Badge updates).
+- Keyboard shortcut manager.
+
+### Phase 6: Polish (Week 7)
+- Motion transitions (Slide, scale, fade).
+- Accessibility audit (ARIA labels, keyboard trap management).
+- Mobile responsive optimizations.
+
+**Project DNA UI/UX is complete and frozen. Ready for implementation.**

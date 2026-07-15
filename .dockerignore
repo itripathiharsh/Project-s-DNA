@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+# Node
+frontend/node_modules/
+frontend/dist/
+# Docker
+Dockerfile
+docker-compose.yml
+# Git
+.git
+.gitignore
+# Test artifacts
+.pytest_cache/
+# OS
+.DS_Store
+Thumbs.db
