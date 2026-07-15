@@ -10,13 +10,14 @@ RUN npm run build
 FROM python:3.12-slim
 WORKDIR /app
 
-# Install build dependencies for tree-sitter C extension
+# Install build dependencies and runtime tools like git
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
     gcc \
     g++ \
     make \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
