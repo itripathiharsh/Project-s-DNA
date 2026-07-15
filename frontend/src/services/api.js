@@ -10,7 +10,7 @@
 //
 // All calls are made same-origin (frontend is served by FastAPI).
 
-const API_BASE = '';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 async function readError(res) {
   const text = await res.text();
