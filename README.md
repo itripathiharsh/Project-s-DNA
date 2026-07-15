@@ -23,36 +23,36 @@ Project DNA is a production-grade static codebase analysis and architectural rea
 
 ```mermaid
 flowchart TD
-    subgraph Frontend [React SPA (Vite)]
-        UI[Warm Obsidian Interface]
-        Store[Analysis Context Store]
+    subgraph Frontend ["React SPA (Vite)"]
+        UI["Warm Obsidian Interface"]
+        Store["Analysis Context Store"]
     end
 
-    subgraph Backend [FastAPI Server]
-        API[REST API Gateway]
-        Orchestrator[Analysis Orchestrator]
+    subgraph Backend ["FastAPI Server"]
+        API["REST API Gateway"]
+        Orchestrator["Analysis Orchestrator"]
         
-        subgraph Scanning Pipeline
-            Dis[Discovery Engine]
-            Git[Git Miner]
-            Parse[AST Parser]
-            Norm[Entity Normalizer]
+        subgraph Scanning_Pipeline ["Scanning Pipeline"]
+            Dis["Discovery Engine"]
+            Git["Git Miner"]
+            Parse["AST Parser"]
+            Norm["Entity Normalizer"]
         end
         
-        subgraph Reasoning Engines
-            Struct[Structural Engine]
-            Evol[Evolution Engine]
-            Know[Knowledge Engine]
-            Risk[Risk Engine]
-            Reason[Insight Engine]
+        subgraph Reasoning_Engines ["Reasoning Engines"]
+            Struct["Structural Engine"]
+            Evol["Evolution Engine"]
+            Know["Knowledge Engine"]
+            Risk["Risk Engine"]
+            Reason["Insight Engine"]
         end
     end
 
-    subgraph Storage [Persistent Storage]
-        DB_Sys[(dna_system.db)]
-        DB_SC[(sc_store.db)]
-        DB_Ev[(ev_store.db)]
-        JSON_Cache[latest_analysis.json]
+    subgraph Storage ["Persistent Storage"]
+        DB_Sys["dna_system.db"]
+        DB_SC["sc_store.db"]
+        DB_Ev["ev_store.db"]
+        JSON_Cache["latest_analysis.json"]
     end
 
     UI --> Store
