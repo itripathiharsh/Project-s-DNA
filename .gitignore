@@ -106,3 +106,19 @@ ev_store.db
 dna_system.db
 logs/
 *.log
+
+# Exclude design specifications and documentation
+new froend/
+docs/
+
+# Exclude temporary output files and diagnostic scripts
+*_output.json
+debug_norm.py
+inspect_norm.py
+temp_check.py
+test_endpoints.py
+test_js.py
+timing_runner.py
+tree_test.py
+verify_analysis.py
+
