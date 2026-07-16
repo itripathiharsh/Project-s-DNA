@@ -14,39 +14,58 @@ const FAKE_LOGS = [
 
 export default function AnalysisProgress() {
   const navigate = useNavigate();
-  const { repoPath, runAnalysis, error } = useAnalysis();
+  const { repoPath, runAnalysisStream, error } = useAnalysis();
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState([]);
-  const startedRef = useRef(false);
-
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
+    // Reset local state
+    setProgress(0);
+    setLogs([]);
 
-    let prog = 10;
-    const interval = setInterval(() => {
-      prog = Math.min(prog + Math.random() * 4, 92);
-      setProgress(prog);
-    }, 400);
-    const logTimer = setInterval(() => {
-      setLogs((prev) => [...prev, FAKE_LOGS[Math.floor(Math.random() * FAKE_LOGS.length)]].slice(-12));
-    }, 1200);
-
-    (async () => {
-      try {
-        await runAnalysis(repoPath);
-        clearInterval(interval);
-        clearInterval(logTimer);
+    const stream = runAnalysisStream(repoPath, (data) => {
+      if (data.type === 'connected') {
+        setLogs((prev) => [
+          ...prev,
+          { type: '[INFO]', msg: 'Connection established with analysis stream.', color: 'text-signal-emerald' }
+        ].slice(-20));
+      } else if (data.type === 'log') {
+        setLogs((prev) => [
+          ...prev,
+          { type: '[INFO]', msg: data.message, color: 'text-signal-emerald' }
+        ].slice(-20));
+      } else if (data.type === 'progress') {
+        if (data.percent !== undefined) {
+          setProgress(data.percent);
+        }
+        const stepLabel = data.step_id ? data.step_id.replace('_', ' ').toUpperCase() : 'STEP';
+        const color = data.status === 'success' ? 'text-signal-emerald' : data.status === 'failed' ? 'text-signal-rose' : 'text-signal-cyan';
+        setLogs((prev) => [
+          ...prev,
+          { type: `[${stepLabel}]`, msg: `${data.message || ''} (${data.status})`, color }
+        ].slice(-20));
+      } else if (data.type === 'complete') {
         setProgress(100);
-        setTimeout(() => navigate('/onboarding/complete'), 600);
-      } catch {
-        clearInterval(interval);
-        clearInterval(logTimer);
+        setLogs((prev) => [
+          ...prev,
+          { type: '[SUCCESS]', msg: 'Analysis completed successfully!', color: 'text-signal-emerald' }
+        ].slice(-20));
+        setTimeout(() => navigate('/onboarding/complete'), 1000);
+      } else if (data.type === 'error') {
+        const errMsg = data.message || 'An unknown error occurred during analysis.';
+        setLogs((prev) => [
+          ...prev,
+          { type: '[ERROR]', msg: errMsg, color: 'text-signal-rose' }
+        ].slice(-20));
       }
-    })();
-    return () => { clearInterval(interval); clearInterval(logTimer); };
+    });
+
+    return () => {
+      if (stream) {
+        stream.close();
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [repoPath, navigate, runAnalysisStream]);
 
   const circumference = 2 * Math.PI * 44;
   const offset = circumference - (progress / 100) * circumference;
