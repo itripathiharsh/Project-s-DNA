@@ -158,6 +158,34 @@ export default function RiskHeatmap() {
                     />
                   </div>
                 </div>
+
+                {/* Insight Interpretation Box */}
+                <div className="mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" style={{ backgroundColor: getRiskColor(selectedFile.total_risk) }} />
+                  <span className="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: getRiskColor(selectedFile.total_risk) }}>
+                    <span className="material-symbols-outlined text-[14px]">psychology</span>
+                    Insight Interpretation
+                  </span>
+                  <p className="text-xs text-on-surface/80 leading-relaxed">
+                    {selectedFile.total_risk >= 100 ? 
+                      "This file represents a critical structural risk. " : 
+                     selectedFile.total_risk >= 50 ? 
+                      "This file poses a high risk to codebase stability. " : 
+                     selectedFile.total_risk >= 20 ? 
+                      "This file has moderate risk factors. " : 
+                      "This file is currently healthy with very low risk. "}
+                    
+                    {selectedFile.security_score > 0 && "Active security vulnerabilities heavily drive this score up. "}
+                    {selectedFile.churn_score > 50 && "Extremely high churn indicates this file is constantly being modified, making it a severe hotspot for bugs. "}
+                    {selectedFile.complexity_score > 30 && "High cognitive complexity makes this code difficult to maintain. "}
+                    
+                    {selectedFile.total_risk >= 50 ? 
+                      "Consider breaking this file apart or auditing it immediately." : 
+                      selectedFile.total_risk < 20 ? 
+                      "No immediate action is required." : ""}
+                  </p>
+                </div>
+
               </div>
             ) : (
               <p className="text-xs text-text-muted text-center py-10">Select a file cell to review risk metrics.</p>

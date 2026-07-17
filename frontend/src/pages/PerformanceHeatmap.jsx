@@ -141,13 +141,37 @@ export default function PerformanceHeatmap() {
                   </div>
                 </div>
 
-                <div className="p-3 bg-surface-container-low/40 border border-border-subtle rounded-lg">
+                <div className="p-3 bg-[#12121e] border border-border-subtle rounded-lg">
                   <div className="flex justify-between font-semibold mb-1.5">
                     <span>Est. Time Complexity Score</span>
                     <span className="font-bold text-primary">{selectedFile.time_complexity_score}</span>
                   </div>
-                  <p className="text-[9px] text-text-muted leading-relaxed mt-1">
+                  <p className="text-[9px] text-text-muted leading-relaxed mt-2">
                     A combination of deep nesting depth and cyclomatic complexity denoting potentially slow execution paths.
+                  </p>
+                </div>
+
+                {/* Insight Interpretation Box */}
+                <div className="mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" style={{ backgroundColor: getScoreColor(selectedFile.time_complexity_score) }} />
+                  <span className="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: getScoreColor(selectedFile.time_complexity_score) }}>
+                    <span className="material-symbols-outlined text-[14px]">psychology</span>
+                    Insight Interpretation
+                  </span>
+                  <p className="text-xs text-on-surface/80 leading-relaxed">
+                    {selectedFile.time_complexity_score >= 100 ? 
+                      "This file has critical performance bottlenecks. " : 
+                     selectedFile.time_complexity_score >= 50 ? 
+                      "This file has a high likelihood of causing performance slowdowns. " : 
+                     selectedFile.time_complexity_score >= 20 ? 
+                      "This file contains moderately complex execution paths. " : 
+                      "This file appears highly performant with flat execution logic. "}
+                    
+                    {selectedFile.expensive_loops > 0 && `There are ${selectedFile.expensive_loops} nested or expensive loops detected, meaning execution time could spike exponentially (O(n^2) or worse) with large data inputs. `}
+                    {selectedFile.blocking_calls > 0 && `There are ${selectedFile.blocking_calls} blocking IO/synchronous calls detected which could freeze the event loop or thread. `}
+                    
+                    {selectedFile.time_complexity_score >= 50 ? 
+                      "Immediate optimization, caching, or asynchronous refactoring is recommended." : ""}
                   </p>
                 </div>
               </div>

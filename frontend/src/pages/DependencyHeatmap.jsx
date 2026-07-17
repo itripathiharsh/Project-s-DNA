@@ -141,6 +141,44 @@ export default function DependencyHeatmap() {
                   </div>
                 </div>
 
+                <div className="p-3 bg-[#12121e] border border-border-subtle rounded-lg text-center mt-2">
+                  <span className="text-[9px] text-text-muted uppercase tracking-widest block mb-1">External Dependency Ratio</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-surface-container-low rounded-full overflow-hidden flex">
+                      <div className="h-full bg-signal-amber" style={{ width: `${Math.min(100, ((selectedFile.external_deps?.length || 0) / Math.max(1, (selectedFile.external_deps?.length || 0) + (selectedFile.internal_deps?.length || 0))) * 100)}%` }} />
+                      <div className="h-full bg-signal-emerald" style={{ width: `${Math.min(100, ((selectedFile.internal_deps?.length || 0) / Math.max(1, (selectedFile.external_deps?.length || 0) + (selectedFile.internal_deps?.length || 0))) * 100)}%` }} />
+                    </div>
+                  </div>
+                  <div className="flex justify-between mt-1 text-[9px] font-semibold text-text-muted">
+                    <span className="text-signal-amber">External</span>
+                    <span className="text-signal-emerald">Internal</span>
+                  </div>
+                </div>
+
+                {/* Insight Interpretation Box */}
+                <div className="mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" style={{ backgroundColor: getDependencyColor(selectedFile.total_deps) }} />
+                  <span className="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: getDependencyColor(selectedFile.total_deps) }}>
+                    <span className="material-symbols-outlined text-[14px]">psychology</span>
+                    Insight Interpretation
+                  </span>
+                  <p className="text-xs text-on-surface/80 leading-relaxed">
+                    {selectedFile.total_deps >= 15 ? 
+                      "This file has an extremely high volume of dependencies, meaning it relies heavily on external context to function. " : 
+                     selectedFile.total_deps >= 8 ? 
+                      "This file has a moderately high dependency load. " : 
+                      "This file has a low dependency load and is fairly self-contained. "}
+                    
+                    {(selectedFile.external_deps?.length || 0) > (selectedFile.internal_deps?.length || 0) ? 
+                      "It relies primarily on 3rd-party libraries, which increases supply-chain risk and makes mocking tests harder. " : 
+                     (selectedFile.internal_deps?.length || 0) > (selectedFile.external_deps?.length || 0) ? 
+                      "It primarily orchestrates internal project modules, indicating it acts as a local coordinator or service layer. " : ""}
+                    
+                    {selectedFile.total_deps >= 15 ? 
+                      "Consider breaking out the logic into separate focused modules (Single Responsibility Principle)." : ""}
+                  </p>
+                </div>
+
                 <div className="p-3 bg-surface-container-low/40 border border-border-subtle rounded-lg">
                   <div className="flex justify-between font-semibold mb-1.5">
                     <span>External Packages Used</span>

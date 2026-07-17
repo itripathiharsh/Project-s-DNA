@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import PageHeader from '../components/PageHeader';
 import { getAdvancedArchitecture } from '../services/api';
+import ForceGraph3D from 'react-force-graph-3d';
 
 const KIND_COLORS = {
   class: '#6366F1',      // Indigo
@@ -16,8 +17,6 @@ const KIND_COLORS = {
 export default function GraphWorkspace() {
   const [viewType, setViewType] = useState('dependency'); // dependency, circular, er, hierarchy, imports
   const [rawData, setRawData] = useState({ nodes: [], links: [], violations: [] });
-  const [nodes, setNodes] = useState([]);
-  const [links, setLinks] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -28,18 +27,23 @@ export default function GraphWorkspace() {
   // Highlighted path (for cycle tracing)
   const [highlightedPath, setHighlightedPath] = useState(null);
 
-  // Viewport zoom & pan state
-  const [pan, setPan] = useState({ x: 450, y: 320 });
-  const [zoom, setZoom] = useState(0.85);
-  const isDraggingViewport = useRef(false);
-  const dragStart = useRef({ x: 0, y: 0 });
+  const containerRef = useRef();
+  const fgRef = useRef();
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
-  // Node drag state
-  const draggedNodeId = useRef(null);
-
-  // Physics simulation loop
-  const simulationRef = useRef(null);
-  const stateRef = useRef({ nodes: [], links: [] });
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateDim = () => {
+      setDimensions({
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight
+      });
+    };
+    updateDim();
+    const observer = new ResizeObserver(updateDim);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const fetchGraph = async () => {
     setLoading(true);
@@ -48,20 +52,15 @@ export default function GraphWorkspace() {
     try {
       const data = await getAdvancedArchitecture(viewType);
       
-      // Keep track of all kinds to build dynamic filter checkboxes
       const kinds = new Set();
       const initializedNodes = (data.nodes || []).map((node) => {
         kinds.add(node.kind);
         return {
           ...node,
-          x: (Math.random() - 0.5) * 400,
-          y: (Math.random() - 0.5) * 400,
-          vx: 0,
-          vy: 0,
+          // 3D graph adds x, y, z automatically, we don't need to manually init them
         };
       });
 
-      // Set initial checkbox states if not set
       const filters = {};
       kinds.forEach(k => {
         filters[k] = true;
@@ -84,193 +83,11 @@ export default function GraphWorkspace() {
     }
   };
 
-  // Re-fetch when view type changes
   useEffect(() => {
     fetchGraph();
   }, [viewType]);
 
-  // Apply filters to nodes and links
-  useEffect(() => {
-    if (loading) return;
-
-    const filteredNodes = rawData.nodes.filter(n => {
-      // Kind filter
-      if (kindFilters[n.kind] === false) return false;
-      return true;
-    });
-
-    const activeNodeIds = new Set(filteredNodes.map(n => n.id));
-    const filteredLinks = rawData.links.filter(l => 
-      activeNodeIds.has(l.source) && activeNodeIds.has(l.target)
-    );
-
-    setNodes(filteredNodes);
-    setLinks(filteredLinks);
-
-    stateRef.current = {
-      nodes: filteredNodes,
-      links: filteredLinks
-    };
-
-    // Restart simulation
-    if (simulationRef.current) cancelAnimationFrame(simulationRef.current);
-    startSimulation();
-
-  }, [rawData, kindFilters]);
-
-  // Physics force directed simulation
-  const startSimulation = () => {
-    let alpha = 1.0;
-    const tick = () => {
-      if (alpha < 0.005) {
-        return;
-      }
-
-      const { nodes: currentNodes, links: currentLinks } = stateRef.current;
-      const nodeMap = {};
-      currentNodes.forEach(n => { nodeMap[n.id] = n; });
-
-      // 1. Repulsion force between nodes
-      for (let i = 0; i < currentNodes.length; i++) {
-        const u = currentNodes[i];
-        if (u.id === draggedNodeId.current) continue;
-        for (let j = i + 1; j < currentNodes.length; j++) {
-          const v = currentNodes[j];
-          let dx = v.x - u.x;
-          let dy = v.y - u.y;
-          if (dx === 0) dx = 0.1;
-          let dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 1) dist = 1;
-          
-          let force = (6000 / (dist * dist)) * alpha;
-          if (force > 15) force = 15;
-          
-          let fx = (dx / dist) * force;
-          let fy = (dy / dist) * force;
-          
-          if (u.id !== draggedNodeId.current) {
-            u.vx -= fx;
-            u.vy -= fy;
-          }
-          if (v.id !== draggedNodeId.current) {
-            v.vx += fx;
-            v.vy += fy;
-          }
-        }
-      }
-
-      // 2. Attraction along links
-      currentLinks.forEach(link => {
-        const source = nodeMap[link.source];
-        const target = nodeMap[link.target];
-        if (source && target) {
-          let dx = target.x - source.x;
-          let dy = target.y - source.y;
-          if (dx === 0) dx = 0.1;
-          let dist = Math.sqrt(dx * dx + dy * dy);
-          
-          let targetDist = 130;
-          let force = (dist - targetDist) * 0.05 * alpha;
-          let fx = (dx / dist) * force;
-          let fy = (dy / dist) * force;
-          
-          if (source.id !== draggedNodeId.current) {
-            source.vx += fx;
-            source.vy += fy;
-          }
-          if (target.id !== draggedNodeId.current) {
-            target.vx -= fx;
-            target.vy -= fy;
-          }
-        }
-      });
-
-      // 3. Central gravity and update
-      currentNodes.forEach(node => {
-        if (node.id === draggedNodeId.current) return;
-        
-        let dx = 0 - node.x;
-        let dy = 0 - node.y;
-        node.vx += dx * 0.02 * alpha;
-        node.vy += dy * 0.02 * alpha;
-
-        node.x += node.vx;
-        node.y += node.vy;
-
-        node.vx *= 0.8;
-        node.vy *= 0.8;
-      });
-
-      alpha *= 0.98;
-      setNodes([...currentNodes]);
-      simulationRef.current = requestAnimationFrame(tick);
-    };
-
-    simulationRef.current = requestAnimationFrame(tick);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (simulationRef.current) cancelAnimationFrame(simulationRef.current);
-    };
-  }, []);
-
-  // Viewport interactions
-  const handleMouseDown = (e) => {
-    if (e.target.tagName === 'svg' || e.target.id === 'viewport-bg') {
-      isDraggingViewport.current = true;
-      dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
-    }
-  };
-
-  const handleMouseMove = (e) => {
-    if (isDraggingViewport.current) {
-      setPan({
-        x: e.clientX - dragStart.current.x,
-        y: e.clientY - dragStart.current.y,
-      });
-    } else if (draggedNodeId.current) {
-      // Update dragged node position
-      const { nodes: currentNodes } = stateRef.current;
-      const node = currentNodes.find(n => n.id === draggedNodeId.current);
-      if (node) {
-        // Convert screen coordinates back to graph local coordinates
-        const rect = e.currentTarget.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        node.x = (mouseX - pan.x) / zoom;
-        node.y = (mouseY - pan.y) / zoom;
-        node.vx = 0;
-        node.vy = 0;
-        setNodes([...currentNodes]);
-      }
-    }
-  };
-
-  const handleMouseUp = () => {
-    isDraggingViewport.current = false;
-    draggedNodeId.current = null;
-  };
-
-  const handleWheel = (e) => {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.1 : 0.9;
-    setZoom((prev) => Math.min(Math.max(prev * factor, 0.15), 4));
-  };
-
-  const focusOnNode = (node) => {
-    setSelectedNode(node);
-    setPan({
-      x: 450 - node.x * zoom,
-      y: 320 - node.y * zoom,
-    });
-  };
-
-  const handleNodeMouseDown = (e, node) => {
-    e.stopPropagation();
-    draggedNodeId.current = node.id;
-    setSelectedNode(node);
-  };
+  // Removed the custom d3Force override that caused NaN physics crash
 
   const toggleKindFilter = (kind) => {
     setKindFilters(prev => ({
@@ -279,40 +96,64 @@ export default function GraphWorkspace() {
     }));
   };
 
+  const getKindColor = (kind) => KIND_COLORS[kind] || KIND_COLORS.default;
+
+  // Compute filtered graph data
+  const { nodes, links } = useMemo(() => {
+    const filteredNodes = rawData.nodes.filter(n => kindFilters[n.kind] !== false);
+    const activeNodeIds = new Set(filteredNodes.map(n => n.id));
+    const filteredLinks = rawData.links.filter(l => 
+      activeNodeIds.has(l.source?.id || l.source) && activeNodeIds.has(l.target?.id || l.target)
+    );
+    return { nodes: filteredNodes, links: filteredLinks };
+  }, [rawData, kindFilters]);
+
   const searchResults = nodes.filter((n) =>
     n.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (n.file || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getKindColor = (kind) => KIND_COLORS[kind] || KIND_COLORS.default;
-
-  // Determine if a link is part of the highlighted path
-  const isLinkHighlighted = (link) => {
+  const isLinkHighlighted = useCallback((link) => {
     if (!highlightedPath) return false;
+    const sourceId = link.source?.id || link.source;
+    const targetId = link.target?.id || link.target;
     for (let i = 0; i < highlightedPath.length - 1; i++) {
       const src = highlightedPath[i];
       const tgt = highlightedPath[i + 1];
       if (
-        (link.source === src && link.target === tgt) ||
-        (link.source === tgt && link.target === src)
+        (sourceId === src && targetId === tgt) ||
+        (sourceId === tgt && targetId === src)
       ) {
         return true;
       }
     }
     return false;
-  };
+  }, [highlightedPath]);
 
-  // Determine if a node is in the highlighted path
-  const isNodeHighlighted = (nodeId) => {
+  const isNodeHighlighted = useCallback((nodeId) => {
     if (!highlightedPath) return false;
     return highlightedPath.includes(nodeId);
+  }, [highlightedPath]);
+
+  const focusOnNode = (node) => {
+    setSelectedNode(node);
+    if (fgRef.current && node) {
+      // Aim at node from outside it
+      const distance = 40;
+      const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+      fgRef.current.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
+        node, // lookAt ({ x, y, z })
+        3000  // ms transition duration
+      );
+    }
   };
 
   return (
     <>
       <PageHeader 
-        title="Architecture Intelligence" 
-        subtitle="Mined codebase coupling, class hierarchies, structural cycles, and violations"
+        title="Architecture Intelligence 3D" 
+        subtitle="Mined codebase coupling, class hierarchies, structural cycles, and violations rendered as a 3D globe"
         actions={
           <div className="flex gap-1.5 bg-surface-container p-1 rounded-lg border border-border-subtle">
             {[
@@ -342,7 +183,6 @@ export default function GraphWorkspace() {
       <div className="p-6 flex-1 flex gap-6 overflow-hidden max-h-[calc(100vh-140px)]">
         {/* Left Side: Filter checkmarks & violations list */}
         <div className="w-80 flex flex-col gap-5 overflow-y-auto">
-          {/* Node Category Filters */}
           <div className="card-base p-4 flex flex-col gap-3">
             <h3 className="font-label-caps text-label-caps text-text-muted border-b border-border-subtle pb-2 flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[16px] text-primary">filter_list</span> Filter Symbols
@@ -374,7 +214,6 @@ export default function GraphWorkspace() {
             </div>
           </div>
 
-          {/* Violations and Cycles alerts */}
           <div className="card-base p-4 flex-1 flex flex-col gap-3 overflow-hidden">
             <h3 className="font-label-caps text-label-caps text-text-muted border-b border-border-subtle pb-2 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
@@ -423,26 +262,16 @@ export default function GraphWorkspace() {
         </div>
 
         {/* Center main graph area */}
-        <div className="flex-1 card-base relative flex flex-col overflow-hidden bg-[#0a0a0f] border border-border-subtle">
-          {/* Controls Overlay */}
-          <div className="absolute top-4 left-4 z-10 flex gap-1.5 bg-surface-container/80 backdrop-blur px-2 py-1.5 rounded-lg border border-border-subtle">
-            <button onClick={() => setZoom(prev => Math.min(prev * 1.2, 4))} className="p-1 text-on-surface hover:text-primary transition-colors" title="Zoom In">
-              <span className="material-symbols-outlined text-[18px]">zoom_in</span>
-            </button>
-            <button onClick={() => setZoom(prev => Math.max(prev * 0.8, 0.15))} className="p-1 text-on-surface hover:text-primary transition-colors" title="Zoom Out">
-              <span className="material-symbols-outlined text-[18px]">zoom_out</span>
-            </button>
-            <button onClick={() => { setPan({ x: 450, y: 320 }); setZoom(0.85); }} className="p-1 text-on-surface hover:text-primary transition-colors" title="Reset Camera">
-              <span className="material-symbols-outlined text-[18px]">restart_alt</span>
-            </button>
-            <span className="w-px h-5 bg-border-subtle mx-1" />
-            <button onClick={fetchGraph} className="p-1 text-on-surface hover:text-primary transition-colors" title="Re-Layout Simulation">
-              <span className="material-symbols-outlined text-[18px]">refresh</span>
+        <div ref={containerRef} className="flex-1 card-base relative flex flex-col overflow-hidden bg-[#0a0a0f] border border-border-subtle rounded-xl">
+          
+          <div className="absolute top-4 left-4 z-10 flex gap-1.5 bg-surface-container/80 backdrop-blur px-2 py-1.5 rounded-lg border border-border-subtle shadow-xl">
+            <button onClick={() => { if(fgRef.current) fgRef.current.zoomToFit(600, 50); }} className="p-1 text-on-surface hover:text-primary transition-colors flex items-center gap-1" title="Reset Camera">
+              <span className="material-symbols-outlined text-[18px]">center_focus_strong</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest hidden lg:block">Center</span>
             </button>
           </div>
 
-          {/* Search bar autocomplete */}
-          <div className="absolute top-4 right-4 z-10 w-64">
+          <div className="absolute top-4 right-4 z-10 w-64 shadow-xl">
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[15px]">search</span>
               <input
@@ -472,9 +301,8 @@ export default function GraphWorkspace() {
             )}
           </div>
 
-          {/* Highlight indicator */}
           {highlightedPath && (
-            <div className="absolute bottom-4 left-4 z-10 bg-surface-container/90 backdrop-blur border border-signal-rose/30 px-3 py-1.5 rounded-lg flex items-center gap-2">
+            <div className="absolute bottom-4 left-4 z-10 bg-surface-container/90 backdrop-blur border border-signal-rose/30 px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-2xl">
               <span className="w-2 h-2 rounded-full bg-signal-rose animate-ping" />
               <span className="text-[10px] text-on-surface font-bold tracking-tight">CYCLE TRACE PATH ACTIVE</span>
               <button 
@@ -489,115 +317,34 @@ export default function GraphWorkspace() {
           {loading ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
               <div className="w-12 h-12 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-              <span className="text-xs text-on-surface-variant font-medium">Assembling structural relationships...</span>
+              <span className="text-xs text-on-surface-variant font-medium">Rendering 3D Space...</span>
             </div>
           ) : error ? (
             <div className="flex-1 flex items-center justify-center text-signal-rose font-semibold text-sm">{error}</div>
           ) : (
-            <svg
-              className="w-full h-full cursor-grab active:cursor-grabbing"
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onWheel={handleWheel}
-            >
-              <rect id="viewport-bg" width="100%" height="100%" fill="transparent" />
-              <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
-                {/* 1. Draw Links */}
-                {links.map((link, idx) => {
-                  const sourceNode = nodes.find((n) => n.id === link.source);
-                  const targetNode = nodes.find((n) => n.id === link.target);
-                  if (!sourceNode || !targetNode) return null;
-                  
-                  const isHighlighted = isLinkHighlighted(link);
-                  const isSelected = selectedNode?.id === sourceNode.id || selectedNode?.id === targetNode.id;
-                  
-                  let strokeColor = '#33333e';
-                  let strokeWidth = 1;
-                  
-                  if (isHighlighted) {
-                    strokeColor = '#F43F5E'; // Red
-                    strokeWidth = 2.5;
-                  } else if (isSelected) {
-                    strokeColor = '#9d4edd'; // Purple glow
-                    strokeWidth = 1.8;
-                  }
-                  
-                  return (
-                    <line
-                      key={`link-${idx}`}
-                      x1={sourceNode.x}
-                      y1={sourceNode.y}
-                      x2={targetNode.x}
-                      y2={targetNode.y}
-                      stroke={strokeColor}
-                      strokeWidth={strokeWidth}
-                      strokeDasharray={link.kind === 'import' ? '4,4' : '0'}
-                      opacity={
-                        highlightedPath
-                          ? (isHighlighted ? 1.0 : 0.15)
-                          : (selectedNode ? (isSelected ? 1.0 : 0.18) : 0.6)
-                      }
-                    />
-                  );
-                })}
-
-                {/* 2. Draw Nodes */}
-                {nodes.map((node) => {
-                  const isSelected = selectedNode?.id === node.id;
-                  const isHighlighted = isNodeHighlighted(node.id);
-                  const isMatch = searchTerm && node.name.toLowerCase().includes(searchTerm.toLowerCase());
-                  const nodeColor = getKindColor(node.kind);
-                  
-                  let r = isSelected ? 12 : isHighlighted ? 10 : isMatch ? 9 : 7;
-                  let strokeColor = 'transparent';
-                  let strokeWidth = 0;
-                  
-                  if (isHighlighted) {
-                    strokeColor = '#F43F5E';
-                    strokeWidth = 2.5;
-                  } else if (isSelected) {
-                    strokeColor = '#FFFFFF';
-                    strokeWidth = 2;
-                  } else if (isMatch) {
-                    strokeColor = '#10B981';
-                    strokeWidth = 1.5;
-                  }
-
-                  return (
-                    <g
-                      key={node.id}
-                      transform={`translate(${node.x}, ${node.y})`}
-                      onMouseDown={(e) => handleNodeMouseDown(e, node)}
-                      className="cursor-pointer"
-                    >
-                      <circle
-                        r={r}
-                        fill={nodeColor}
-                        stroke={strokeColor}
-                        strokeWidth={strokeWidth}
-                        style={{
-                          filter: isSelected || isHighlighted 
-                            ? `drop-shadow(0 0 8px ${isHighlighted ? '#F43F5E' : nodeColor})` 
-                            : 'none'
-                        }}
-                      />
-                      <text
-                        y={isSelected ? -16 : -11}
-                        textAnchor="middle"
-                        fill={isSelected || isHighlighted ? '#FFFFFF' : '#A1A1AA'}
-                        fontSize={isSelected || isHighlighted ? '11px' : '9px'}
-                        fontWeight={isSelected || isHighlighted ? 'bold' : 'normal'}
-                        className="select-none pointer-events-none font-code-sm"
-                      >
-                        {node.name}
-                      </text>
-                    </g>
-                  );
-                })}
-              </g>
-            </svg>
+            <ForceGraph3D
+              ref={fgRef}
+              width={dimensions.width}
+              height={dimensions.height}
+              graphData={{ nodes, links }}
+              nodeLabel="name"
+              nodeColor={node => {
+                if (isNodeHighlighted(node.id)) return '#F43F5E';
+                if (selectedNode?.id === node.id) return '#FFFFFF';
+                return getKindColor(node.kind);
+              }}
+              nodeVal={node => (selectedNode?.id === node.id || isNodeHighlighted(node.id)) ? 15 : 8}
+              nodeOpacity={0.9}
+              nodeResolution={16}
+              linkColor={link => isLinkHighlighted(link) ? '#F43F5E' : (selectedNode?.id === link.source?.id || selectedNode?.id === link.target?.id) ? '#9d4edd' : '#33333e'}
+              linkWidth={link => isLinkHighlighted(link) ? 3 : (selectedNode?.id === link.source?.id || selectedNode?.id === link.target?.id) ? 2 : 1.5}
+              linkOpacity={0.6}
+              linkDirectionalParticles={link => isLinkHighlighted(link) ? 4 : 0}
+              linkDirectionalParticleWidth={4}
+              onNodeClick={focusOnNode}
+              backgroundColor="#0a0a0f"
+              enableNodeDrag={false}
+            />
           )}
         </div>
 
@@ -656,9 +403,11 @@ export default function GraphWorkspace() {
                   Coupling Relations
                 </span>
                 <div className="space-y-1.5">
-                  {links.filter((l) => l.source === selectedNode.id || l.target === selectedNode.id).map((l, i) => {
-                    const isSource = l.source === selectedNode.id;
-                    const partnerId = isSource ? l.target : l.source;
+                  {links.filter((l) => (l.source?.id || l.source) === selectedNode.id || (l.target?.id || l.target) === selectedNode.id).map((l, i) => {
+                    const srcId = l.source?.id || l.source;
+                    const tgtId = l.target?.id || l.target;
+                    const isSource = srcId === selectedNode.id;
+                    const partnerId = isSource ? tgtId : srcId;
                     const partnerNode = nodes.find(n => n.id === partnerId);
                     return (
                       <div
@@ -676,7 +425,7 @@ export default function GraphWorkspace() {
                       </div>
                     );
                   })}
-                  {links.filter((l) => l.source === selectedNode.id || l.target === selectedNode.id).length === 0 && (
+                  {links.filter((l) => (l.source?.id || l.source) === selectedNode.id || (l.target?.id || l.target) === selectedNode.id).length === 0 && (
                     <span className="text-text-muted text-xs italic text-center block py-4">No coupling relationships identified.</span>
                   )}
                 </div>
@@ -685,7 +434,7 @@ export default function GraphWorkspace() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-text-muted gap-3 py-16">
               <span className="material-symbols-outlined text-[36px]">touch_app</span>
-              <p className="text-xs">Click or search a symbol node in the graph workspace to analyze its dependencies.</p>
+              <p className="text-xs">Click or search a symbol node in the 3D graph workspace to analyze its dependencies.</p>
             </div>
           )}
         </div>

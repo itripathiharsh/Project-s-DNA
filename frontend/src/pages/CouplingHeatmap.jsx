@@ -158,6 +158,29 @@ export default function CouplingHeatmap() {
                     Value of 1 means completely unstable (depends on others but nothing depends on it).
                   </p>
                 </div>
+
+                {/* Insight Interpretation Box */}
+                <div className="mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" style={{ backgroundColor: getCouplingColor(selectedFile.coupling_score) }} />
+                  <span className="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: getCouplingColor(selectedFile.coupling_score) }}>
+                    <span className="material-symbols-outlined text-[14px]">psychology</span>
+                    Insight Interpretation
+                  </span>
+                  <p className="text-xs text-on-surface/80 leading-relaxed">
+                    {selectedFile.coupling_score >= 10 ? 
+                      "This file has highly tangled coupling, meaning it is deeply integrated into many other modules. " : 
+                     selectedFile.coupling_score >= 5 ? 
+                      "This file has moderate coupling. " : 
+                      "This file is loosely coupled and isolated. "}
+                    
+                    {selectedFile.fan_in > 5 && selectedFile.fan_out > 5 && "It acts as a 'God Object' or central hub since it has both high incoming dependents and outgoing dependencies. "}
+                    
+                    {selectedFile.instability > 0.8 ? 
+                      "With an instability close to 1.0, this file is highly irresponsible: it relies heavily on other files but nothing relies on it, meaning it will easily break if other things change." : 
+                     selectedFile.instability < 0.2 && selectedFile.fan_in > 0 ? 
+                      "With an instability close to 0.0, this file is a 'Stable abstraction'. Many things depend on it, so changing it is very dangerous." : ""}
+                  </p>
+                </div>
               </div>
             ) : (
               <p className="text-xs text-text-muted text-center py-10">Select a file cell to review coupling metrics.</p>

@@ -150,6 +150,30 @@ export default function FolderHeatmap() {
                     Sum of cyclomatic complexity across all analyzed functions inside this directory.
                   </p>
                 </div>
+
+                {/* Insight Interpretation Box */}
+                <div className="mt-2 p-3 bg-primary/5 border border-primary/20 rounded-lg relative overflow-hidden">
+                  <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" style={{ backgroundColor: getFolderColor(selectedFolder.file_count) }} />
+                  <span className="flex items-center gap-1.5 font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: getFolderColor(selectedFolder.file_count) }}>
+                    <span className="material-symbols-outlined text-[14px]">psychology</span>
+                    Insight Interpretation
+                  </span>
+                  <p className="text-xs text-on-surface/80 leading-relaxed">
+                    {selectedFolder.file_count >= 20 ? 
+                      "This directory is extremely dense and contains a high volume of files. " : 
+                     selectedFolder.file_count >= 10 ? 
+                      "This directory is moderately large. " : 
+                      "This directory is small and focused. "}
+                    
+                    {selectedFolder.loc > 5000 && "It holds a massive amount of code (over 5k LOC), which can be an indicator of a monolithic structure. "}
+                    {selectedFolder.complexity > 500 && "The aggregated complexity here is very high, suggesting deeply nested logic or many interdependent functions. "}
+                    
+                    {selectedFolder.file_count >= 20 ? 
+                      "Consider splitting this folder into smaller, more modular sub-packages to improve maintainability." : 
+                      "The folder structure appears healthy and manageable."}
+                  </p>
+                </div>
+
               </div>
             ) : (
               <p className="text-xs text-text-muted text-center py-10">Select a directory cell to review folder metrics.</p>
