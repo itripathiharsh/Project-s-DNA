@@ -129,6 +129,18 @@ def analyze_knowledge(
             },
             source="knowledge_engine",
         )
+        for fp, details in ownership_scores.items():
+            evidence_store.add_evidence(
+                "ownership_score",
+                {
+                    "primary_owner": details["primary_owner"],
+                    "ownership_score": details["ownership_score"],
+                    "bus_factor": bus_factor,
+                    "bus_factor_risk": bus_factor_risk,
+                },
+                source="knowledge_engine",
+                file_path=fp,
+            )
 
     logger.info("Knowledge analysis completed. Bus factor: %d (risk: %s)", bus_factor, bus_factor_risk)
     return result

@@ -3,7 +3,6 @@ from dna.models import FileInfo, IndexedFile, FileInventory, RepositoryMetadata
 from dna.indexer.classifier import classify_file, build_classification_map
 from dna.indexer.hasher import compute_file_hash, detect_changes
 
-
 def build_file_inventory(
     files: list[FileInfo],
     repo_metadata: RepositoryMetadata,
@@ -27,6 +26,9 @@ def build_file_inventory(
 
         content_hash = compute_file_hash(f.path) if need_hashes else ""
 
+        # Default change_type is "added" if no previous cache exists
+        change_type = "added" if not previous_inventory or not previous_inventory.files else "unchanged"
+
         indexed.append(IndexedFile(
             path=f.path,
             relative_path=f.relative_path,
@@ -39,9 +41,10 @@ def build_file_inventory(
             category=cat,
             content_hash=content_hash,
             mtime=mtime,
+            change_type=change_type
         ))
 
-    if previous_inventory:
+    if previous_inventory and previous_inventory.files:
         new_hashes = {f.relative_path: f.content_hash for f in indexed}
         old_map = {f.relative_path: f.content_hash for f in previous_inventory.files}
         changes = detect_changes(old_map, new_hashes)
@@ -52,6 +55,8 @@ def build_file_inventory(
                 f.change_type = "modified"
             elif f.relative_path in changes.get("removed", {}):
                 f.change_type = "removed"
+            else:
+                f.change_type = "unchanged"
 
     total_size = sum(f.size_bytes for f in indexed)
 

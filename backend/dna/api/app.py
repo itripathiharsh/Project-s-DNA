@@ -8,6 +8,9 @@ from dna.api.routers import evidence as evidence_router
 from dna.api.routers import insights as insights_router
 from dna.api.routers import system as system_router
 from dna.api.routers import search as search_router
+from dna.api.routers import streaming as streaming_router
+from dna.api.routers import advanced as advanced_router
+from dna.api.routers import heatmaps as heatmaps_router
 from dna.api.auth import require_auth
 from dna.api.middleware import TimeoutMiddleware, RateLimitMiddleware
 from dna.remote import is_github_url, get_local_repo_from_github
@@ -56,6 +59,9 @@ app.include_router(evidence_router.router)
 app.include_router(insights_router.router)
 app.include_router(system_router.router)
 app.include_router(search_router.router)
+app.include_router(streaming_router.router)
+app.include_router(advanced_router.router)
+app.include_router(heatmaps_router.router)
 
 
 @app.middleware("http")

@@ -1,0 +1,106 @@
+[
+  {
+    "id": "discovery",
+    "name": "Codebase Discovery",
+    "depends_on": [],
+    "priority": 100,
+    "timeout": 30,
+    "retry": 3
+  },
+  {
+    "id": "git_history",
+    "name": "Git History Mining",
+    "depends_on": ["discovery"],
+    "priority": 90,
+    "timeout": 120,
+    "retry": 2
+  },
+  {
+    "id": "indexer",
+    "name": "File Inventory Indexer",
+    "depends_on": ["discovery"],
+    "priority": 80,
+    "timeout": 60,
+    "retry": 3
+  },
+  {
+    "id": "parser",
+    "name": "AST Parser",
+    "depends_on": ["indexer"],
+    "priority": 70,
+    "timeout": 180,
+    "retry": 3
+  },
+  {
+    "id": "normalizer",
+    "name": "Syntax Normalizer",
+    "depends_on": ["parser"],
+    "priority": 60,
+    "timeout": 60,
+    "retry": 3
+  },
+  {
+    "id": "symbols",
+    "name": "Symbol Table Indexer",
+    "depends_on": ["normalizer"],
+    "priority": 50,
+    "timeout": 60,
+    "retry": 3
+  },
+  {
+    "id": "graph",
+    "name": "Dependency Graph Builder",
+    "depends_on": ["symbols"],
+    "priority": 40,
+    "timeout": 60,
+    "retry": 3
+  },
+  {
+    "id": "entities",
+    "name": "Entity Schema Builder",
+    "depends_on": ["graph"],
+    "priority": 30,
+    "timeout": 60,
+    "retry": 3
+  },
+  {
+    "id": "structural_engine",
+    "name": "Structural Engine",
+    "depends_on": ["entities"],
+    "priority": 20,
+    "timeout": 60,
+    "retry": 2
+  },
+  {
+    "id": "evolution_engine",
+    "name": "Evolution Engine",
+    "depends_on": ["entities", "git_history"],
+    "priority": 20,
+    "timeout": 60,
+    "retry": 2
+  },
+  {
+    "id": "knowledge_engine",
+    "name": "Knowledge Engine",
+    "depends_on": ["entities", "git_history"],
+    "priority": 20,
+    "timeout": 60,
+    "retry": 2
+  },
+  {
+    "id": "risk_engine",
+    "name": "Risk Engine",
+    "depends_on": ["entities", "graph"],
+    "priority": 20,
+    "timeout": 60,
+    "retry": 2
+  },
+  {
+    "id": "reasoning",
+    "name": "Architectural Reasoning",
+    "depends_on": ["structural_engine", "evolution_engine", "knowledge_engine", "risk_engine"],
+    "priority": 10,
+    "timeout": 120,
+    "retry": 2
+  }
+]

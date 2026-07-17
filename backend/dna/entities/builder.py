@@ -70,6 +70,11 @@ def _add_symbol_entities(graph: EntityGraph, nf: NormalizedFile):
             properties={
                 "is_method": str(func.is_method),
                 "complexity": str(getattr(func, "complexity", 1)),
+                "cognitive_complexity": str(getattr(func, "cognitive_complexity", 0)),
+                "halstead_effort": str(getattr(func, "halstead_effort", 0.0)),
+                "halstead_volume": str(getattr(func, "halstead_volume", 0.0)),
+                "lines_of_code": str(func.end_line - func.start_line),
+                "nesting_depth": str(getattr(func, "nesting_depth", 0))
             },
         ))
         graph.add_relation(EntityRelation(
@@ -106,6 +111,11 @@ def _add_symbol_entities(graph: EntityGraph, nf: NormalizedFile):
                     "is_method": "true",
                     "class_name": cls.name,
                     "complexity": str(getattr(method, "complexity", 1)),
+                    "cognitive_complexity": str(getattr(method, "cognitive_complexity", 0)),
+                    "halstead_effort": str(getattr(method, "halstead_effort", 0.0)),
+                    "halstead_volume": str(getattr(method, "halstead_volume", 0.0)),
+                    "lines_of_code": str(method.end_line - method.start_line),
+                    "nesting_depth": str(getattr(method, "nesting_depth", 0))
                 },
             ))
             graph.add_relation(EntityRelation(

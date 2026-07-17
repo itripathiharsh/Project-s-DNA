@@ -18,9 +18,16 @@ def analyze_evolution(
     total_authors = len(commit_history.author_stats)
 
     category_counts: dict[str, int] = {}
+    import re
+    pr_count = 0
+    issue_count = 0
     for c in commits:
         cat = categorize_commit(c.message)
         category_counts[cat] = category_counts.get(cat, 0) + 1
+        if re.search(r"merge pull request #\d+", c.message, re.IGNORECASE):
+            pr_count += 1
+        if re.search(r"(fixes|closes|resolves) #\d+", c.message, re.IGNORECASE):
+            issue_count += 1
 
     total_insertions = sum(c.insertions for c in commits)
     total_deletions = sum(c.deletions for c in commits)
@@ -50,6 +57,8 @@ def analyze_evolution(
         "first_commit": first,
         "last_commit": last,
         "merge_commits": sum(1 for c in commits if len(c.parents) > 1),
+        "pr_stats": pr_count,
+        "issue_stats": issue_count,
     }
 
     hotspot_list: list[dict] = []
@@ -70,7 +79,15 @@ def analyze_evolution(
         for c in commits:
             evidence_store.add_evidence(
                 "commit_metadata",
-                {"hash": c.hash, "author": getattr(c, "author_name", ""), "date": c.committed_at},
+                {
+                    "hash": c.hash,
+                    "author": getattr(c, "author_name", ""),
+                    "date": c.committed_at,
+                    "message": c.message,
+                    "insertions": c.insertions,
+                    "deletions": c.deletions,
+                    "files": [{"file_path": fc.file_path, "insertions": fc.insertions, "deletions": fc.deletions, "change_type": fc.change_type} for fc in c.per_file_changes]
+                },
                 source="evolution_engine",
             )
         evidence_store.add_evidence(
@@ -100,13 +117,32 @@ def analyze_evolution(
                 {"hotspots": hotspot_list[:10]},
                 source="evolution_engine",
             )
-            for h in hotspot_list[:10]:
-                evidence_store.add_evidence(
-                    "change_frequency",
-                    {"change_count": h["change_count"]},
-                    source="evolution_engine",
-                    file_path=h["file"],
-                )
+        for fp, count in file_change_counts.items():
+            evidence_store.add_evidence(
+                "change_frequency",
+                {"change_count": count},
+                source="evolution_engine",
+                file_path=fp,
+            )
+        
+        evidence_store.add_evidence(
+            "pr_issue_stats",
+            {
+                "pr_count": pr_count,
+                "issue_count": issue_count,
+            },
+            source="evolution_engine"
+        )
+        evidence_store.add_evidence(
+            "branches_list",
+            [{"name": getattr(b, "name", ""), "is_head": getattr(b, "is_head", False)} for b in commit_history.branches],
+            source="evolution_engine"
+        )
+        evidence_store.add_evidence(
+            "tags_list",
+            [{"name": getattr(t, "name", ""), "date": getattr(t, "tagged_at", "")} for t in commit_history.tags],
+            source="evolution_engine"
+        )
 
     logger.info("Evolution analysis completed. Commits: %d, Authors: %d", total_commits, total_authors)
     # Provide backward‑compatible key for older callers

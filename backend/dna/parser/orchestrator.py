@@ -7,7 +7,6 @@ from dna.parser.errors import ParserError
 
 logger = logging.getLogger("dna.parser")
 
-
 def is_binary_file(path: str) -> bool:
     try:
         with open(path, "rb") as f:
@@ -15,7 +14,6 @@ def is_binary_file(path: str) -> bool:
             return b"\x00" in chunk
     except OSError:
         return True
-
 
 def parse_repository(
     inventory: FileInventory,
@@ -31,32 +29,39 @@ def parse_repository(
             if is_binary_file(f.path):
                 logger.warning("Skipping binary file: %s", f.relative_path)
                 continue
+            
+            # Incremental support: skip parsing if the file has not changed
+            change_type = getattr(f, "change_type", "modified")
+            if change_type == "unchanged":
+                logger.info("Incremental: skipping parsing for unchanged file %s", f.relative_path)
+                continue
+                
             source_files.append(f)
 
-    logger.info("Parsing %d source files using %d workers", len(source_files), max_workers)
+    logger.info("Parsing %d changed/new source files using %d workers", len(source_files), max_workers)
 
     parsed: list[ParsedFile] = []
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_map = {}
-        for f in source_files:
-            future = executor.submit(_safe_parse, f.path, f.language)
-            future_map[future] = f.relative_path
+    if source_files:
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_map = {}
+            for f in source_files:
+                future = executor.submit(_safe_parse, f.path, f.language)
+                future_map[future] = f.relative_path
 
-        for future in as_completed(future_map):
-            rel_path = future_map[future]
-            try:
-                result = future.result()
-                if result:
-                    result.relative_path = rel_path
-                    parsed.append(result)
-            except ParserError as e:
-                logger.error("Failed to parse %s: %s", rel_path, str(e))
+            for future in as_completed(future_map):
+                rel_path = future_map[future]
+                try:
+                    result = future.result()
+                    if result:
+                        result.relative_path = rel_path
+                        parsed.append(result)
+                except ParserError as e:
+                    logger.error("Failed to parse %s: %s", rel_path, str(e))
 
     logger.info("Successfully parsed %d files", len(parsed))
     parsed.sort(key=lambda p: p.relative_path or "")
     return parsed
-
 
 def _safe_parse(path: str, language: str) -> ParsedFile | None:
     try:

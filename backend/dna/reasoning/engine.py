@@ -4,7 +4,6 @@ from dna.evidence.store import EvidenceStore
 
 logger = logging.getLogger("dna.reasoning")
 
-
 INSIGHT_RULES = [
     {
         "category": "hotspot_risk",
@@ -177,20 +176,114 @@ def generate_insights(evidence_store: EvidenceStore) -> list[dict]:
         elif rule["category"] == "commit_metadata_activity":
             _add_commit_metadata_insight(insights, matching, rule)
 
+    # Calculate confidence and fill in canonical schemas
     from dna.reasoning.confidence import calculate_confidence
-    for insight in insights:
+    
+    formatted_insights = []
+    for idx, insight in enumerate(insights):
+        category = insight.get("category")
         ev_id = insight.get("evidence_id")
         matching = [e for e in all_evidence if e.id == ev_id] if ev_id else []
         if not matching:
-            rule = next((r for r in INSIGHT_RULES if r["category"] == insight["category"]), None)
+            rule = next((r for r in INSIGHT_RULES if r["category"] == category), None)
             if rule:
                 matching = [e for e in all_evidence if e.type in rule["requires_evidence"]]
         
-        insight["confidence"] = calculate_confidence(insight["category"], matching, all_evidence)
+        confidence = calculate_confidence(category, matching, all_evidence)
+        insight["confidence"] = confidence
 
-    logger.info("Generated %d insights from %d evidence items", len(insights), len(all_evidence))
-    insights.sort(key=lambda x: {"high": 0, "medium": 1, "low": 2, "info": 3}.get(x["severity"], 4))
-    return insights
+        # Apply strict schema mapping
+        title = insight.get("label", "Codebase Insight")
+        summary = insight.get("detail", "")
+        file_path = insight.get("file_path", "")
+        severity = insight.get("severity", "info")
+        
+        # Build extra contract fields based on category
+        recommendations = []
+        impact = ""
+        risk_score = 0.0
+        visualization_hints = {"type": "default"}
+        actions = []
+        
+        if category == "hotspot_risk":
+            recommendations = [
+                "Break down the file into smaller modules or classes.",
+                "Introduce comprehensive unit tests to cover the high change surface.",
+                "Conduct a peer review specifically targeting structural complexity."
+            ]
+            impact = "High change rate combined with high complexity increases regression rates and developer fatigue."
+            risk_score = 8.5 * confidence
+            visualization_hints = {"type": "heatmap", "axis": "complexity_vs_churn", "highlight": file_path}
+            actions = [
+                {"name": "Create Review Roster", "path": f"/reviews/new?file={file_path}"},
+                {"name": "Define Refactor Steps", "path": f"/refactoring/new?file={file_path}"}
+            ]
+        elif category == "bus_factor" or category == "bus_factor_direct":
+            recommendations = [
+                "Cross-train team members on this area of the codebase.",
+                "Establish pair-programming routines.",
+                "Improve documentation and structural annotations."
+            ]
+            impact = "Loss of primary contributors will lead to severe delays in debugging or extending features."
+            risk_score = 9.0 * confidence
+            visualization_hints = {"type": "pie_chart", "highlight": "knowledge_distribution"}
+            actions = [
+                {"name": "Delegate Ownership", "path": "/organization"}
+            ]
+        elif category == "test_debt":
+            recommendations = [
+                "Configure a pre-commit hook enforcing minimum test ratios.",
+                "Schedule a dedicated test writing sprint for uncovered files."
+            ]
+            impact = "Low test coverage causes hidden regressions to slip into production environments."
+            risk_score = 6.0 * confidence
+            visualization_hints = {"type": "bar_chart", "highlight": "coverage_ratio"}
+            actions = [
+                {"name": "Initialize Test Pipeline", "path": "/refactoring"}
+            ]
+        elif category == "dependency_risk":
+            recommendations = [
+                "Extract common abstractions to a shared models or utils layer.",
+                "Use Dependency Injection to decouple cyclic classes."
+            ]
+            impact = "Circular dependencies prevent modular testing, complicate compilation, and hide side effects."
+            risk_score = 7.8 * confidence
+            visualization_hints = {"type": "dependency_graph", "highlight": file_path}
+            actions = [
+                {"name": "Analyze Cycle Graph", "path": "/graph"}
+            ]
+        else:
+            recommendations = ["Monitor complexity and evolution stats over the next release cycle."]
+            impact = "Minor structural or organizational layout issues may gradually degrade maintainability."
+            risk_score = 3.5 * confidence
+            visualization_hints = {"type": "metric_card"}
+            actions = [{"name": "View File", "path": f"/explorer?file={file_path}"}]
+
+        strict_insight = {
+            "id": f"insight-{idx}",
+            "title": title,
+            "label": title,  # Compatibility
+            "summary": summary,
+            "detail": summary,  # Compatibility
+            "severity": severity,
+            "confidence": confidence,
+            "category": category,
+            "file_path": file_path,
+            "supporting_evidence": [ev_id] if ev_id else [],
+            "evidence_id": ev_id,  # Compatibility
+            "affected_entities": [file_path] if file_path else [],
+            "recommendations": recommendations,
+            "impact": impact,
+            "risk_score": round(risk_score, 2),
+            "visualization_hints": visualization_hints,
+            "actions": actions,
+            "related_insights": []
+        }
+        formatted_insights.append(strict_insight)
+
+    logger.info("Generated %d insights", len(formatted_insights))
+    formatted_insights.sort(key=lambda x: {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}.get(x["severity"], 5))
+    return formatted_insights
 
 
 def _add_hotspot_insights(insights: list, evidence: list, rule: dict):
@@ -202,7 +295,6 @@ def _add_hotspot_insights(insights: list, evidence: list, rule: dict):
             "severity": rule["severity"],
             "file_path": h.file_path,
             "evidence_id": h.id,
-            "confidence": 0.85,
             "detail": f"File {h.file_path} has high change frequency",
         })
 
@@ -218,7 +310,6 @@ def _add_bus_factor_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.9 if bf == 1 else 0.8,
                 "detail": f"Bus factor is {bf} — project knowledge is concentrated",
             })
 
@@ -234,7 +325,6 @@ def _add_test_debt_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.75,
                 "detail": f"Test file ratio is {ratio}",
             })
 
@@ -250,7 +340,6 @@ def _add_dependency_risk_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.9,
                 "detail": f"{cycles} dependency cycles detected",
             })
 
@@ -263,7 +352,6 @@ def _add_growth_insight(insights: list, evidence: list, rule: dict):
             "severity": rule["severity"],
             "file_path": e.file_path,
             "evidence_id": e.id,
-            "confidence": 0.6,
             "detail": "Codebase growth trend available",
         })
 
@@ -279,7 +367,6 @@ def _add_refactoring_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.7,
                 "detail": f"Average module depth {avg_depth} suggests deep nesting",
             })
 
@@ -295,7 +382,6 @@ def _add_author_contribution_insight(insights: list, evidence: list, rule: dict)
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.8,
                 "detail": f"Author {d.get('author')} contributed {pct}% of commits",
             })
 
@@ -311,7 +397,6 @@ def _add_module_structure_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.7,
                 "detail": f"Max directory depth is {max_depth}",
             })
 
@@ -327,7 +412,6 @@ def _add_large_files_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.75,
                 "detail": f"File contains {funcs} functions",
             })
 
@@ -343,7 +427,6 @@ def _add_hotspot_active_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": h.get("file"),
                 "evidence_id": e.id,
-                "confidence": 0.8,
                 "detail": f"File is an active hotspot with {h.get('change_count')} changes",
             })
 
@@ -358,7 +441,6 @@ def _add_commit_distribution_insight(insights: list, evidence: list, rule: dict)
             "severity": rule["severity"],
             "file_path": e.file_path,
             "evidence_id": e.id,
-            "confidence": 0.6,
             "detail": f"Repository has {total} commits parsed in total",
         })
 
@@ -374,7 +456,6 @@ def _add_refactoring_opportunity_events_insight(insights: list, evidence: list, 
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.65,
                 "detail": f"File was refactored {count} times",
             })
 
@@ -390,7 +471,6 @@ def _add_temporal_coupling_coupling_insight(insights: list, evidence: list, rule
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.7,
                 "detail": f"Temporal coupling with {len(couplings)} other files",
             })
 
@@ -406,7 +486,6 @@ def _add_expertise_risk_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.6,
                 "detail": f"Expertise score is low: {score}",
             })
 
@@ -422,7 +501,6 @@ def _add_dependency_graph_risk_insight(insights: list, evidence: list, rule: dic
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.7,
                 "detail": f"Dependency graph coupling coefficient is {coupling}",
             })
 
@@ -438,7 +516,6 @@ def _add_bus_factor_direct_insight(insights: list, evidence: list, rule: dict):
                 "severity": rule["severity"],
                 "file_path": e.file_path,
                 "evidence_id": e.id,
-                "confidence": 0.85,
                 "detail": f"Direct bus factor is {val}",
             })
 
@@ -451,6 +528,5 @@ def _add_commit_metadata_insight(insights: list, evidence: list, rule: dict):
             "severity": rule["severity"],
             "file_path": e.file_path,
             "evidence_id": e.id,
-            "confidence": 0.5,
             "detail": "Commit metadata analyzed",
         })

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+const eventSource = new EventSource('http://localhost:5173/v1/analyze/sse?repo_path=F:/code/project%20DNA');
+eventSource.onmessage = function(event) {
+  console.log("Message:", event.data);
+};
+eventSource.onerror = function(err) {
+  console.log("Error:", err);
+};
+</script>
+</body>
+</html>

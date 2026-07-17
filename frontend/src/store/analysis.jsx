@@ -30,6 +30,50 @@ export function AnalysisProvider({ children }) {
     loadLatest();
   }, [loadLatest]);
 
+  const runAnalysisStream = useCallback((path, onEvent) => {
+    if (!path) return null;
+    setRepoPath(path);
+    setLoading(true);
+    setError(null);
+
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+    const sseUrl = `${apiBase}/v1/analyze/sse?repo_path=${encodeURIComponent(path)}`;
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (onEvent) {
+          onEvent(data);
+        }
+        if (data.type === 'complete') {
+          setData(data.result);
+          setLoading(false);
+          eventSource.close();
+        } else if (data.type === 'error') {
+          setError(data.message || 'Analysis failed');
+          setData(null);
+          setLoading(false);
+          eventSource.close();
+        }
+      } catch (err) {
+        console.error('Error handling SSE message:', err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error('EventSource connection error:', err);
+      setError('Connection to analysis stream lost.');
+      setLoading(false);
+      eventSource.close();
+      if (onEvent) {
+        onEvent({ type: 'error', message: 'Connection to analysis stream lost.' });
+      }
+    };
+
+    return eventSource;
+  }, []);
+
   const runAnalysis = useCallback(async (path) => {
     if (!path) return;
     setRepoPath(path);
@@ -57,7 +101,7 @@ export function AnalysisProvider({ children }) {
 
   return (
     <AnalysisContext.Provider
-      value={{ repoPath, data, error, loading, runAnalysis, reset, setRepoPath, loadLatest }}
+      value={{ repoPath, data, error, loading, runAnalysis, runAnalysisStream, reset, setRepoPath, loadLatest }}
     >
       {children}
     </AnalysisContext.Provider>

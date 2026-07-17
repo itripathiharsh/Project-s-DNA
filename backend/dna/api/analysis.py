@@ -1,100 +1,76 @@
-import tempfile
 import os
-from dna.discovery.orchestrator import discover_repository, NotAGitRepositoryError
-from dna.git_history.miner import mine_git_history
-from dna.indexer.orchestrator import index_repository
-from dna.parser.orchestrator import parse_repository
-from dna.normalizer.orchestrator import normalize_parsed_files
-from dna.symbols.indexer import build_symbol_index
-from dna.graph.builder import build_dependency_graph
-from dna.entities.builder import build_entity_graph
+import shutil
+import json
+import logging
+from typing import Callable, Any
+
+from dna.config import get_config
+from dna.logging import configure_logging
+from dna.pipeline.dag import PipelineDAG, PipelineContext
 from dna.storage.store import SCStore
 from dna.evidence.store import EvidenceStore
-from dna.engines.structural import analyze_structure
-from dna.engines.evolution import analyze_evolution
-from dna.engines.knowledge import analyze_knowledge
-from dna.engines.risk import analyze_risks
-from dna.reasoning.engine import generate_insights
-from dna.models import CommitHistory
-
-
-import logging
-from dna.logging import log_stage, configure_logging
-from dna.config import get_config
 
 logger = logging.getLogger("dna.api")
 
-
-def run_full_analysis(repo_path: str) -> dict:
-    # Ensure logging is configured (e.g. if run directly from a script/test rather than FastAPI server)
+def run_full_analysis(repo_path: str, progress_callback: Callable[[str, str, int, str], None] = None) -> dict:
     configure_logging(level=get_config().log_level)
+    logger.info("Starting declarative DAG codebase analysis for: %s", repo_path)
 
-    logger.info("Starting codebase analysis for repository: %s", repo_path)
+    # Set up temporary storage directories
+    import tempfile
     with tempfile.TemporaryDirectory() as tmpdir:
         store_path = os.path.join(tmpdir, "sc_store.db")
         ev_path = os.path.join(tmpdir, "ev_store.db")
 
-        with log_stage("discovery"):
-            repo = discover_repository(repo_path)
+        # Create pipeline context
+        context = PipelineContext(repo_path, store_path, ev_path)
 
-        with log_stage("git_history"):
-            try:
-                history = mine_git_history(repo_path)
-            except NotAGitRepositoryError:
-                history = CommitHistory()
+        # Instantiate declarative DAG
+        dag = PipelineDAG()
 
-        with log_stage("indexer"):
-            inventory = index_repository(repo_path, repo)
+        # Intercept steps to perform incremental merging after 'entities' step
+        original_progress_callback = progress_callback
+        
+        def dag_progress_callback(step_id: str, status: str, percent: int, message: str):
+            # When the entities step succeeds, merge it with the existing database graph
+            if step_id == "entities" and status == "success":
+                try:
+                    _perform_incremental_merge(context)
+                except Exception as e:
+                    logger.error("Failed to perform incremental merge: %s", e)
+            
+            if original_progress_callback:
+                original_progress_callback(step_id, status, percent, message)
 
-        with log_stage("parser"):
-            parsed = parse_repository(inventory)
+        # Execute DAG
+        success = dag.execute(context, progress_callback=dag_progress_callback)
 
-        with log_stage("normalizer"):
-            normalized = normalize_parsed_files(parsed)
+        if not success:
+            logger.error("Pipeline execution failed. Errors: %s", context.errors)
+            first_err = next(iter(context.errors.values())) if context.errors else "Unknown pipeline error"
+            raise RuntimeError(f"Analysis pipeline execution failed: {first_err}")
 
-        with log_stage("symbols"):
-            symbol_index = build_symbol_index(normalized)
-
-        with log_stage("graph"):
-            dep_graph = build_dependency_graph(normalized, symbol_index)
-
-        with log_stage("entities"):
-            entity_graph = build_entity_graph(normalized, symbol_index, dep_graph)
-
-        with SCStore(store_path) as sc_store:
-            sc_store.save_entity_graph(entity_graph)
-            sc_store.set_metadata("repo_path", repo_path)
-            sc_store.set_metadata("analysis_time", "now")
-
-        with EvidenceStore(ev_path) as ev_store:
-            with log_stage("structural_engine"):
-                with ev_store.transaction():
-                    structural = analyze_structure(entity_graph, ev_store)
-            with log_stage("evolution_engine"):
-                with ev_store.transaction():
-                    evolution = analyze_evolution(history, entity_graph, evidence_store=ev_store)
-            with log_stage("knowledge_engine"):
-                with ev_store.transaction():
-                    knowledge = analyze_knowledge(history, entity_graph, ev_store, repo_path=repo_path)
-            with log_stage("risk_engine"):
-                with ev_store.transaction():
-                    risks = analyze_risks(entity_graph, dep_graph, ev_store)
-            with log_stage("reasoning"):
-                insights = generate_insights(ev_store)
-
-        logger.info("Analysis successfully completed for repository: %s", repo_path)
-
-        # Copy temporary DB files to permanent locations
+        # Post-process: persist stores
         cfg = get_config()
         dest_store_path = cfg.store_path or os.path.join(os.getcwd(), "sc_store.db")
         dest_ev_path = cfg.evidence_path or os.path.join(os.getcwd(), "ev_store.db")
-        
-        import shutil
+
         os.makedirs(os.path.dirname(os.path.abspath(dest_store_path)), exist_ok=True)
         os.makedirs(os.path.dirname(os.path.abspath(dest_ev_path)), exist_ok=True)
-        
+
+        # Copy the temporary databases back to the configured production database paths
         shutil.copy2(store_path, dest_store_path)
         shutil.copy2(ev_path, dest_ev_path)
+
+        # Collect results
+        evolution = context.data.get("evolution_engine", {})
+        knowledge = context.data.get("knowledge_engine", {})
+        risks = context.data.get("risk_engine", {})
+        structural = context.data.get("structural_engine", {})
+        insights = context.data.get("reasoning", [])
+        inventory = context.data.get("indexer")
+
+        repo = context.data.get("discovery")
 
         # Register to System DB
         try:
@@ -105,7 +81,7 @@ def run_full_analysis(repo_path: str) -> dict:
                     name=os.path.basename(repo_path) or repo_path,
                     total_files=inventory.total_files if inventory else 0,
                     source_files=len([f for f in inventory.files if f.category == "source"]) if inventory else 0,
-                    commits=evolution.get("total_commits", 0),
+                    commits=evolution.get("total_commits", 0) if isinstance(evolution, dict) else 0,
                     risk_score=risks.get("overall_risk_score", 0.0) if isinstance(risks, dict) else 0.0
                 )
         except Exception as e:
@@ -117,8 +93,8 @@ def run_full_analysis(repo_path: str) -> dict:
                 "is_git": repo.is_git if repo else False,
             },
             "summary": {
-                "total_commits": evolution.get("total_commits", 0),
-                "total_authors": evolution.get("total_authors", 0),
+                "total_commits": evolution.get("total_commits", 0) if isinstance(evolution, dict) else 0,
+                "total_authors": evolution.get("total_authors", 0) if isinstance(evolution, dict) else 0,
                 "total_files": inventory.total_files if inventory else 0,
                 "source_files": len([f for f in inventory.files if f.category == "source"]) if inventory else 0,
                 "test_files": len([f for f in inventory.files if f.category == "test"]) if inventory else 0,
@@ -133,10 +109,75 @@ def run_full_analysis(repo_path: str) -> dict:
         # Save to latest_analysis.json
         try:
             latest_path = os.path.join(os.getcwd(), "latest_analysis.json")
-            import json
             with open(latest_path, "w", encoding="utf-8") as f:
                 json.dump(res_dict, f, indent=2)
         except Exception as e:
             logger.error("Failed to write latest_analysis.json: %s", e)
 
         return res_dict
+
+def _perform_incremental_merge(context: PipelineContext):
+    """Merges the newly parsed delta entity graph with the existing full entity graph."""
+    inventory = context.data.get("indexer")
+    delta_graph = context.data.get("entities")
+    
+    if not inventory or not delta_graph:
+        return
+
+    # Determine changed or deleted files
+    changed_files = {f.relative_path for f in inventory.files if getattr(f, "change_type", "modified") in ("added", "modified", "removed")}
+    
+    cfg = get_config()
+    dest_store_path = cfg.store_path or os.path.join(os.getcwd(), "sc_store.db")
+    
+    previous_graph = None
+    if os.path.exists(dest_store_path):
+        try:
+            with SCStore(dest_store_path) as old_store:
+                previous_graph = old_store.load_entity_graph()
+                logger.info("Loaded previous entity graph of %d entities for merging", len(previous_graph.entities))
+        except Exception as ex:
+            logger.warning("Could not load previous entity graph for merging: %s", ex)
+            
+    if previous_graph and changed_files:
+        # Filter out old elements for changed files
+        merged_entities = [e for e in previous_graph.entities if e.file_path not in changed_files]
+        kept_uids = {e.uid for e in merged_entities}
+        
+        merged_relations = [
+            r for r in previous_graph.relations 
+            if r.source_uid in kept_uids and r.target_uid in kept_uids
+        ]
+        
+        from dna.models import EntityGraph
+        full_graph = EntityGraph(entities=merged_entities, relations=merged_relations)
+        
+        # Add new entities with content hashes attached
+        for e in delta_graph.entities:
+            file_info = next((f for f in inventory.files if f.relative_path == e.file_path), None)
+            if file_info:
+                setattr(e, "hash", file_info.content_hash)
+            full_graph.add_entity(e)
+            
+        # Add new relations
+        for r in delta_graph.relations:
+            full_graph.add_relation(r)
+            
+        logger.info("Merged: previous graph entities=%d, delta graph entities=%d, final merged graph entities=%d",
+                    len(previous_graph.entities), len(delta_graph.entities), len(full_graph.entities))
+        
+        context.data["entities"] = full_graph
+    else:
+        # First run: attach hashes to all entities
+        for e in delta_graph.entities:
+            file_info = next((f for f in inventory.files if f.relative_path == e.file_path), None)
+            if file_info:
+                setattr(e, "hash", file_info.content_hash)
+        logger.info("First analysis run; saving entity graph directly with hashes")
+        
+    # Write to local temp store database path so that subsequent engines (which read from ctx) get the full graph
+    # and saving it updates the temp DB which is copied to destination at the end of execution.
+    with SCStore(context.store_path) as temp_store:
+        temp_store.save_entity_graph(context.data["entities"])
+        temp_store.set_metadata("repo_path", context.repo_path)
+        temp_store.set_metadata("analysis_time", "now")

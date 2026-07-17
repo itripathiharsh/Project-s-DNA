@@ -1,7 +1,7 @@
 import os
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query, Body
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -444,7 +444,7 @@ async def query_assistant(req: AssistantQuery):
     return {
         "query": req.query,
         "answer": response_text,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 # --- 11. Diff Viewer ---

@@ -11,6 +11,19 @@ const NAV = [
   { to: '/evolution', label: 'Evolution Timeline', icon: 'query_stats' },
 ];
 
+const HEATMAPS = [
+  { to: '/heatmaps/complexity', label: 'Complexity Heatmap', icon: 'bar_chart_4_bars' },
+  { to: '/heatmaps/change', label: 'Change Heatmap', icon: 'history' },
+  { to: '/heatmaps/ownership', label: 'Ownership Heatmap', icon: 'groups' },
+  { to: '/heatmaps/security', label: 'Security Heatmap', icon: 'gpp_maybe' },
+  { to: '/heatmaps/performance', label: 'Performance Heatmap', icon: 'speed' },
+  { to: '/heatmaps/coupling', label: 'Coupling Heatmap', icon: 'hub' },
+  { to: '/heatmaps/dependency', label: 'Dependency Heatmap', icon: 'extension' },
+  { to: '/heatmaps/folder', label: 'Folder Heatmap', icon: 'folder_open' },
+  { to: '/heatmaps/risk', label: 'Risk Heatmap', icon: 'warning' },
+  { to: '/heatmaps/git-activity', label: 'Git Activity Heatmap', icon: 'calendar_month' },
+];
+
 const SECONDARY = [
   { to: '/ai-assistant', label: 'AI Assistant', icon: 'smart_toy' },
   { to: '/cross-repo', label: 'Cross-Repo', icon: 'compare' },
@@ -79,6 +92,28 @@ export default function Sidebar() {
           <div className="px-3 text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Core Explorer</div>
           <nav className="space-y-1">
             {NAV.map((n) => (
+              <NavLink
+                key={n.to}
+                to={n.to}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                    isActive
+                      ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_12px_rgba(157,78,221,0.06)] font-semibold'
+                      : 'text-on-surface-variant hover:bg-surface-container-high/40 hover:text-on-surface font-medium'
+                  }`
+                }
+              >
+                <span className="material-symbols-outlined text-[17px]">{n.icon}</span>
+                <span className="text-[12px]">{n.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+
+        <div>
+          <div className="px-3 text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Repository Heatmaps</div>
+          <nav className="space-y-1">
+            {HEATMAPS.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}

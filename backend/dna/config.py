@@ -193,6 +193,16 @@ def get_config() -> DNAConfig:
     global _global_config
     if _global_config is None:
         _global_config = DNAConfig.load()
+    
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        import tempfile
+        # Generate unique path for this specific test case
+        test_env = os.environ["PYTEST_CURRENT_TEST"]
+        # Sanitize to be a safe filename prefix
+        safe_name = "".join(c if c.isalnum() else "_" for c in test_env.split(" ")[0])
+        _global_config.store_path = os.path.join(tempfile.gettempdir(), f"sc_store_{safe_name}.db")
+        _global_config.evidence_path = os.path.join(tempfile.gettempdir(), f"ev_store_{safe_name}.db")
+        
     return _global_config
 
 

@@ -162,7 +162,7 @@ class IndexedFile(FileInfo):
     category: FileCategory = FileCategory.OTHER
     content_hash: str = ""
     mtime: float = 0.0
-    change_type: str = "unchanged"
+    change_type: str = "added"
 
 
 @dataclass
@@ -211,7 +211,11 @@ class FunctionDef:
     end_line: int = 0
     is_method: bool = False
     complexity: int = 1
+    cognitive_complexity: int = 0
+    halstead_effort: float = 0.0
+    halstead_volume: float = 0.0
     calls: list[str] = field(default_factory=list)
+    nesting_depth: int = 0
 
 
 @dataclass

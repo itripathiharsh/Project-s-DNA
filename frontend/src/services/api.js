@@ -281,3 +281,120 @@ export async function globalSearch(q, type = '') {
   return res.json();
 }
 
+// 12. Advanced Repository Intelligence Center
+export async function getAdvancedScores() {
+  const res = await fetch(`${API_BASE}/v1/advanced/scores`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getAdvancedArchitecture(viewType = 'dependency') {
+  const res = await fetch(`${API_BASE}/v1/advanced/architecture/views?view_type=${encodeURIComponent(viewType)}`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function postAdvancedChat(prompt, contextFiles = null) {
+  const res = await fetch(`${API_BASE}/v1/advanced/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, context_files: contextFiles }),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function postAdvancedAction(actionType, targetFile = null) {
+  const res = await fetch(`${API_BASE}/v1/advanced/action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action_type: actionType, target_file: targetFile }),
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getAdvancedGithubMetrics() {
+  const res = await fetch(`${API_BASE}/v1/advanced/github/metrics`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getAdvancedCodeSmells() {
+  const res = await fetch(`${API_BASE}/v1/advanced/code/smells`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getAdvancedSecurityReport() {
+  const res = await fetch(`${API_BASE}/v1/advanced/security/report`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getAdvancedPerformanceHotpaths() {
+  const res = await fetch(`${API_BASE}/v1/advanced/performance/hotpaths`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+// 13. Heatmaps
+export async function getComplexityHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/complexity`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getChangeHeatmap(timeFilter = 'all') {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/change?time_filter=${encodeURIComponent(timeFilter)}`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getOwnershipHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/ownership`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getSecurityHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/security`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getPerformanceHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/performance`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getCouplingHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/coupling`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getDependencyHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/dependency`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getFolderHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/folder`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getRiskHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/risk`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getGitActivityHeatmap() {
+  const res = await fetch(`${API_BASE}/v1/heatmaps/git-activity`);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}

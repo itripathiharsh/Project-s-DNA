@@ -9,6 +9,16 @@ import KnowledgeWorkspace from './pages/KnowledgeWorkspace';
 import IntelligenceCenter from './pages/IntelligenceCenter';
 import Structural from './pages/Structural';
 import Settings from './pages/Settings';
+import ComplexityHeatmap from './pages/ComplexityHeatmap';
+import ChangeHeatmap from './pages/ChangeHeatmap';
+import OwnershipHeatmap from './pages/OwnershipHeatmap';
+import SecurityHeatmap from './pages/SecurityHeatmap';
+import PerformanceHeatmap from './pages/PerformanceHeatmap';
+import CouplingHeatmap from './pages/CouplingHeatmap';
+import DependencyHeatmap from './pages/DependencyHeatmap';
+import FolderHeatmap from './pages/FolderHeatmap';
+import RiskHeatmap from './pages/RiskHeatmap';
+import GitActivityHeatmap from './pages/GitActivityHeatmap';
 
 import SelectRepository from './pages/onboarding/SelectRepository';
 import ConfigureAnalysis from './pages/onboarding/ConfigureAnalysis';
@@ -53,6 +63,17 @@ export default function App() {
             <Route path="/evolution" element={<EvolutionTimeline />} />
             <Route path="/structural" element={<Structural />} />
             <Route path="/settings" element={<Settings />} />
+
+            <Route path="/heatmaps/complexity" element={<ComplexityHeatmap />} />
+            <Route path="/heatmaps/change" element={<ChangeHeatmap />} />
+            <Route path="/heatmaps/ownership" element={<OwnershipHeatmap />} />
+            <Route path="/heatmaps/security" element={<SecurityHeatmap />} />
+            <Route path="/heatmaps/performance" element={<PerformanceHeatmap />} />
+            <Route path="/heatmaps/coupling" element={<CouplingHeatmap />} />
+            <Route path="/heatmaps/dependency" element={<DependencyHeatmap />} />
+            <Route path="/heatmaps/folder" element={<FolderHeatmap />} />
+            <Route path="/heatmaps/risk" element={<RiskHeatmap />} />
+            <Route path="/heatmaps/git-activity" element={<GitActivityHeatmap />} />
 
             <Route path="/cross-repo" element={<CrossRepo />} />
             <Route path="/reviews" element={<TeamReview />} />

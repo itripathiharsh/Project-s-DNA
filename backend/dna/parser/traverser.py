@@ -1,5 +1,5 @@
 from dna.models import SymbolTable, FunctionDef, ClassDef, ImportEntry, ExportEntry
-from dna.parser.complexity import calculate_complexity
+from dna.parser.complexity import calculate_complexity, calculate_cognitive_complexity, calculate_halstead, calculate_nesting_depth
 
 
 def extract_symbols(root_node, source_bytes: bytes, language: str) -> SymbolTable:
@@ -36,8 +36,11 @@ def _extract_python(root, source: bytes) -> SymbolTable:
             end = node.end_point[0] + 1
             is_method = bool(_class_stack)
             complexity = calculate_complexity(node, "Python")
+            mcog = calculate_cognitive_complexity(node, "Python")
+            mhalstead = calculate_halstead(node, source)
             calls = _extract_calls(node, source, "Python")
-            func = FunctionDef(name=name, params=params, start_line=start, end_line=end, is_method=is_method, complexity=complexity, calls=calls)
+            depth = calculate_nesting_depth(node, "Python")
+            func = FunctionDef(name=name, params=params, start_line=start, end_line=end, is_method=is_method, complexity=complexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], calls=calls, nesting_depth=depth)
             if _class_stack:
                 _class_stack[-1].methods.append(func)
             functions.append(func)
@@ -131,7 +134,10 @@ def _extract_js(root, source: bytes) -> SymbolTable:
             start = node.start_point[0] + 1
             end = node.end_point[0] + 1
             complexity = calculate_complexity(node, "JavaScript")
-            functions.append(FunctionDef(name=name, params=params, start_line=start, end_line=end, complexity=complexity, calls=_extract_calls(node, source, "JavaScript")))
+            mcog = calculate_cognitive_complexity(node, "JavaScript")
+            mhalstead = calculate_halstead(node, source)
+            depth = calculate_nesting_depth(node, "JavaScript")
+            functions.append(FunctionDef(name=name, params=params, start_line=start, end_line=end, complexity=complexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], calls=_extract_calls(node, source, "JavaScript"), nesting_depth=depth))
 
         elif node.type == "class_declaration":
             name = _get_child_text_by_type(node, "identifier", source) or "<anon>"
@@ -153,7 +159,10 @@ def _extract_js(root, source: bytes) -> SymbolTable:
                         mstart = child.start_point[0] + 1
                         mend = child.end_point[0] + 1
                         mcomplexity = calculate_complexity(child, "JavaScript")
-                        mfunc = FunctionDef(name=mname, params=mparams, start_line=mstart, end_line=mend, is_method=True, complexity=mcomplexity, calls=_extract_calls(child, source, "JavaScript"))
+                        mcog = calculate_cognitive_complexity(child, "JavaScript")
+                        mhalstead = calculate_halstead(child, source)
+                        mdepth = calculate_nesting_depth(child, "JavaScript")
+                        mfunc = FunctionDef(name=mname, params=mparams, start_line=mstart, end_line=mend, is_method=True, complexity=mcomplexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], calls=_extract_calls(child, source, "JavaScript"), nesting_depth=mdepth)
                         cls.methods.append(mfunc)
                         functions.append(mfunc)
             classes.append(cls)
@@ -182,7 +191,8 @@ def _extract_js(root, source: bytes) -> SymbolTable:
                         params = _extract_js_params(value, source)
                         start = value.start_point[0] + 1
                         end = value.end_point[0] + 1
-                        functions.append(FunctionDef(name=name, params=params, start_line=start, end_line=end, calls=_extract_calls(value, source, "JavaScript")))
+                        depth = calculate_nesting_depth(value, "JavaScript")
+                        functions.append(FunctionDef(name=name, params=params, start_line=start, end_line=end, calls=_extract_calls(value, source, "JavaScript"), nesting_depth=depth))
 
         for child in node.children:
             visit(child)
@@ -204,7 +214,10 @@ def _extract_ts(root, source: bytes) -> SymbolTable:
             start = node.start_point[0] + 1
             end = node.end_point[0] + 1
             complexity = calculate_complexity(node, "TypeScript")
-            functions.append(FunctionDef(name=name, params=params, start_line=start, end_line=end, complexity=complexity, calls=_extract_calls(node, source, "TypeScript")))
+            mcog = calculate_cognitive_complexity(node, "TypeScript")
+            mhalstead = calculate_halstead(node, source)
+            depth = calculate_nesting_depth(node, "TypeScript")
+            functions.append(FunctionDef(name=name, params=params, start_line=start, end_line=end, complexity=complexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], calls=_extract_calls(node, source, "TypeScript"), nesting_depth=depth))
 
         elif node.type == "class_declaration":
             name = _get_child_text_by_type(node, "type_identifier", source) or _get_child_text_by_type(node, "identifier", source) or "<anon>"
@@ -226,7 +239,10 @@ def _extract_ts(root, source: bytes) -> SymbolTable:
                         mstart = child.start_point[0] + 1
                         mend = child.end_point[0] + 1
                         mcomplexity = calculate_complexity(child, "TypeScript")
-                        mfunc = FunctionDef(name=mname, params=mparams, start_line=mstart, end_line=mend, is_method=True, complexity=mcomplexity, calls=_extract_calls(child, source, "TypeScript"))
+                        mcog = calculate_cognitive_complexity(child, "TypeScript")
+                        mhalstead = calculate_halstead(child, source)
+                        mdepth = calculate_nesting_depth(child, "TypeScript")
+                        mfunc = FunctionDef(name=mname, params=mparams, start_line=mstart, end_line=mend, is_method=True, complexity=mcomplexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], calls=_extract_calls(child, source, "TypeScript"), nesting_depth=mdepth)
                         cls.methods.append(mfunc)
                         functions.append(mfunc)
             classes.append(cls)
@@ -273,7 +289,8 @@ def _extract_ts(root, source: bytes) -> SymbolTable:
                         params = _extract_js_params(value, source)
                         start = value.start_point[0] + 1
                         end = value.end_point[0] + 1
-                        functions.append(FunctionDef(name=name, params=params, start_line=start, end_line=end))
+                        depth = calculate_nesting_depth(value, "TypeScript")
+                        functions.append(FunctionDef(name=name, params=params, start_line=start, end_line=end, nesting_depth=depth))
 
         for child in node.children:
             visit(child)
@@ -423,7 +440,10 @@ def _extract_go(root, source: bytes) -> SymbolTable:
             start = node.start_point[0] + 1
             end = node.end_point[0] + 1
             complexity = calculate_complexity(node, "Go")
-            func = FunctionDef(name=name, params=params, start_line=start, end_line=end, complexity=complexity)
+            mcog = calculate_cognitive_complexity(node, "Go")
+            mhalstead = calculate_halstead(node, source)
+            depth = calculate_nesting_depth(node, "Go")
+            func = FunctionDef(name=name, params=params, start_line=start, end_line=end, complexity=complexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], nesting_depth=depth)
             functions.append(func)
             return
 
@@ -452,7 +472,10 @@ def _extract_go(root, source: bytes) -> SymbolTable:
             start = node.start_point[0] + 1
             end = node.end_point[0] + 1
             mcomplexity = calculate_complexity(node, "Go")
-            func = FunctionDef(name=mname, params=params, start_line=start, end_line=end, is_method=True, complexity=mcomplexity)
+            mcog = calculate_cognitive_complexity(node, "Go")
+            mhalstead = calculate_halstead(node, source)
+            mdepth = calculate_nesting_depth(node, "Go")
+            func = FunctionDef(name=mname, params=params, start_line=start, end_line=end, is_method=True, complexity=mcomplexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], nesting_depth=mdepth)
             functions.append(func)
 
             if receiver_type and receiver_type in class_map:
@@ -524,7 +547,10 @@ def _extract_rust(root, source: bytes) -> SymbolTable:
             start = node.start_point[0] + 1
             end = node.end_point[0] + 1
             complexity = calculate_complexity(node, "Rust")
-            func = FunctionDef(name=name, params=params, start_line=start, end_line=end, complexity=complexity)
+            mcog = calculate_cognitive_complexity(node, "Rust")
+            mhalstead = calculate_halstead(node, source)
+            depth = calculate_nesting_depth(node, "Rust")
+            func = FunctionDef(name=name, params=params, start_line=start, end_line=end, complexity=complexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], nesting_depth=depth)
             functions.append(func)
             return
 
@@ -546,7 +572,10 @@ def _extract_rust(root, source: bytes) -> SymbolTable:
                         start = child.start_point[0] + 1
                         end = child.end_point[0] + 1
                         mcomplexity = calculate_complexity(child, "Rust")
-                        func = FunctionDef(name=mname, params=params, start_line=start, end_line=end, is_method=True, complexity=mcomplexity)
+                        mcog = calculate_cognitive_complexity(child, "Rust")
+                        mhalstead = calculate_halstead(child, source)
+                        mdepth = calculate_nesting_depth(child, "Rust")
+                        func = FunctionDef(name=mname, params=params, start_line=start, end_line=end, is_method=True, complexity=mcomplexity, cognitive_complexity=mcog, halstead_effort=mhalstead["effort"], halstead_volume=mhalstead["volume"], nesting_depth=mdepth)
                         functions.append(func)
                         if receiver and receiver in class_map:
                             class_map[receiver].methods.append(func)
