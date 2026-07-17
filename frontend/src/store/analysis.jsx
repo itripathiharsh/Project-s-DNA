@@ -30,48 +30,88 @@ export function AnalysisProvider({ children }) {
     loadLatest();
   }, [loadLatest]);
 
+  // ── POST + fake-progress polling ──────────────────────────────────────────
+  // Replaces the broken SSE approach which dies on Render's 60-second idle
+  // timeout. We POST to /v1/analyze (a normal HTTP request, no streaming)
+  // and emit synthetic progress events every 4 s so the UI stays alive.
   const runAnalysisStream = useCallback((path, onEvent) => {
     if (!path) return null;
     setRepoPath(path);
     setLoading(true);
     setError(null);
 
+    let cancelled = false;
+    let stepInterval = null;
+
+    const PROGRESS_STEPS = [
+      { step_id: 'discovery',  message: 'Discovering repository files...',     percent: 10 },
+      { step_id: 'ast',        message: 'Running AST extraction engine...',     percent: 25 },
+      { step_id: 'structural', message: 'Analysing structural dependencies...', percent: 40 },
+      { step_id: 'evolution',  message: 'Running evolution & git engine...',    percent: 55 },
+      { step_id: 'knowledge',  message: 'Building knowledge graph...',          percent: 70 },
+      { step_id: 'risk',       message: 'Evaluating risk patterns...',          percent: 85 },
+      { step_id: 'reasoning',  message: 'Generating insights...',               percent: 95 },
+    ];
+
     const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://project-dna-backend.onrender.com';
-    const sseUrl = `${apiBase}/v1/analyze/sse?repo_path=${encodeURIComponent(path)}`;
-    const eventSource = new EventSource(sseUrl);
 
-    eventSource.onmessage = (event) => {
+    (async () => {
       try {
-        const data = JSON.parse(event.data);
-        if (onEvent) {
-          onEvent(data);
+        if (onEvent) onEvent({ type: 'connected' });
+
+        // Emit fake progress ticks every 4 s while the POST is in-flight
+        let stepIdx = 0;
+        stepInterval = setInterval(() => {
+          if (cancelled || stepIdx >= PROGRESS_STEPS.length) {
+            clearInterval(stepInterval);
+            return;
+          }
+          const step = PROGRESS_STEPS[stepIdx++];
+          if (onEvent) onEvent({ type: 'progress', ...step, status: 'running' });
+        }, 4000);
+
+        // Single POST – may take several minutes on Render free tier, that is OK
+        const response = await fetch(`${apiBase}/v1/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ repo_path: path }),
+        });
+
+        clearInterval(stepInterval);
+        if (cancelled) return;
+
+        if (!response.ok) {
+          const text = await response.text();
+          let detail = text;
+          try { detail = JSON.parse(text).detail || text; } catch { /* ignore */ }
+          throw new Error(detail || `HTTP ${response.status}`);
         }
-        if (data.type === 'complete') {
-          setData(data.result);
-          setLoading(false);
-          eventSource.close();
-        } else if (data.type === 'error') {
-          setError(data.message || 'Analysis failed');
-          setData(null);
-          setLoading(false);
-          eventSource.close();
-        }
+
+        const result = await response.json();
+        if (cancelled) return;
+
+        setData(result);
+        setLoading(false);
+        if (onEvent) onEvent({ type: 'complete', result });
+
       } catch (err) {
-        console.error('Error handling SSE message:', err);
+        if (cancelled) return;
+        clearInterval(stepInterval);
+        const msg = err.message || String(err);
+        setError(msg);
+        setData(null);
+        setLoading(false);
+        if (onEvent) onEvent({ type: 'error', message: msg });
+      }
+    })();
+
+    // Return a cancel handle with the same .close() interface as EventSource
+    return {
+      close: () => {
+        cancelled = true;
+        if (stepInterval) clearInterval(stepInterval);
       }
     };
-
-    eventSource.onerror = (err) => {
-      console.error('EventSource connection error:', err);
-      setError('Connection to analysis stream lost.');
-      setLoading(false);
-      eventSource.close();
-      if (onEvent) {
-        onEvent({ type: 'error', message: 'Connection to analysis stream lost.' });
-      }
-    };
-
-    return eventSource;
   }, []);
 
   const runAnalysis = useCallback(async (path) => {
