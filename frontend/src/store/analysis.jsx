@@ -36,7 +36,7 @@ export function AnalysisProvider({ children }) {
     setLoading(true);
     setError(null);
 
-    const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://project-dna-backend.onrender.com';
     const sseUrl = `${apiBase}/v1/analyze/sse?repo_path=${encodeURIComponent(path)}`;
     const eventSource = new EventSource(sseUrl);
 
