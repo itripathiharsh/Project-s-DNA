@@ -8,12 +8,15 @@ import {
   getAdvancedCodeSmells,
   getAdvancedSecurityReport,
   getAdvancedPerformanceHotpaths,
-  postAdvancedAction
+  postAdvancedAction,
+  postAdvancedChat
 } from '../services/api';
 import Heatmaps from '../components/Heatmaps';
+import Benchmarking from '../components/Benchmarking';
+import BranchDiff from '../components/BranchDiff';
 
 export default function Dashboard() {
-  const { data: analysisData, repoPath, loading: analysisLoading, reset } = useAnalysis();
+  const { data: analysisData, repoPath, loading: analysisLoading, reset, activeBranch, setActiveBranch, selectedBranches } = useAnalysis();
   const navigate = useNavigate();
 
   // Tabs state
@@ -72,7 +75,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchAdvancedData();
-  }, [analysisData]);
+  }, [analysisData, activeBranch]);
 
   // Execute AI action
   const handleAiAction = async (actionType) => {
@@ -182,6 +185,20 @@ export default function Dashboard() {
         subtitle={repoPath || "No active repo"}
         actions={
           <div className="flex items-center gap-3">
+            {selectedBranches && selectedBranches.length > 1 && (
+              <div className="flex items-center bg-surface-container-high rounded px-3 py-1.5 border border-border-subtle">
+                <span className="material-symbols-outlined text-[16px] text-text-muted mr-2">call_split</span>
+                <select 
+                  value={activeBranch}
+                  onChange={(e) => setActiveBranch(e.target.value)}
+                  className="bg-transparent text-sm text-on-surface font-semibold outline-none cursor-pointer"
+                >
+                  {selectedBranches.map(b => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <button onClick={() => navigate('/graph')} className="btn-secondary px-4 py-2 flex items-center gap-1.5 hover:scale-[1.02] transition-all text-xs font-semibold">
               <span className="material-symbols-outlined text-[15px]">account_tree</span> Workspace Graph
             </button>
@@ -200,7 +217,9 @@ export default function Dashboard() {
             { id: 'ai', label: 'AI Repository Assistant', icon: 'smart_toy' },
             { id: 'github', label: 'GitHub Intelligence', icon: 'query_stats' },
             { id: 'audits', label: 'Code & Security Audits', icon: 'security' },
-            { id: 'heatmaps', label: 'Intelligence Heatmaps', icon: 'grid_view' }
+            { id: 'heatmaps', label: 'Intelligence Heatmaps', icon: 'grid_view' },
+            { id: 'benchmarking', label: 'Branch Benchmarks', icon: 'bar_chart' },
+            { id: 'diff', label: 'Branch Compare', icon: 'difference' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -365,7 +384,7 @@ export default function Dashboard() {
                       "Audit memory limits in SQLite store."
                     ].map((p, idx) => (
                       <button
-                        key={idx}
+                        key={p}
                         onClick={() => { setChatPrompt(p); }}
                         className="text-left text-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container/60 p-2 rounded border border-border-subtle transition-all"
                       >
@@ -536,7 +555,7 @@ export default function Dashboard() {
                               
                               return (
                                 <div 
-                                  key={idx}
+                                  key={`${day}-${item.hour}`}
                                   className={`w-3.5 h-3.5 rounded-sm transition-all ${bg}`}
                                   title={`${day} ${item.hour} - ${item.commits} commits`}
                                 />
@@ -751,6 +770,16 @@ export default function Dashboard() {
             {/* 5. Heatmaps Tab */}
             {activeTab === 'heatmaps' && (
               <Heatmaps />
+            )}
+
+            {/* 6. Benchmarking Tab */}
+            {activeTab === 'benchmarking' && (
+              <Benchmarking />
+            )}
+
+            {/* 7. Diff Tab */}
+            {activeTab === 'diff' && (
+              <BranchDiff />
             )}
 
           </div>

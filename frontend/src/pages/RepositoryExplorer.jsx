@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import { getExplorerTree, getExplorerFile, getExplorerSymbols } from '../services/api';
+import DOMPurify from 'dompurify';
 
 function TreeNode({ node, onFileSelect, selectedPath, searchTerm }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -52,9 +53,9 @@ function TreeNode({ node, onFileSelect, selectedPath, searchTerm }) {
       </div>
       {isDir && isOpen && node.children && (
         <div className="border-l border-border-subtle/50 ml-3.5 pl-1.5 mt-0.5 space-y-0.5">
-          {node.children.map((child, idx) => (
+          {node.children.map((child) => (
             <TreeNode
-              key={idx}
+              key={child.path || child.name}
               node={child}
               onFileSelect={onFileSelect}
               selectedPath={selectedPath}
@@ -134,7 +135,7 @@ export default function RepositoryExplorer() {
     // Comments highlighting
     escaped = escaped.replace(/(#.*|\/\/.*)/g, '<span class="text-text-muted italic">$1</span>');
 
-    return <span dangerouslySetInnerHTML={{ __html: escaped }} />;
+    return <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(escaped) }} />;
   };
 
   return (
