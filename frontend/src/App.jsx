@@ -26,6 +26,7 @@ const PredictiveAnalytics = React.lazy(() => import('./pages/PredictiveAnalytics
 const RefactoringSuite = React.lazy(() => import('./pages/RefactoringSuite'));
 const FlowJourneys = React.lazy(() => import('./pages/FlowJourneys'));
 const DocumentationHub = React.lazy(() => import('./pages/DocumentationHub'));
+const Landing = React.lazy(() => import('./pages/Landing'));
 
 const SelectRepository = React.lazy(() => import('./pages/onboarding/SelectRepository'));
 const ConfigureAnalysis = React.lazy(() => import('./pages/onboarding/ConfigureAnalysis'));
@@ -68,7 +69,7 @@ export default function App() {
         <BrowserRouter>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
-              <Route path="/" element={<Navigate to="/onboarding" replace />} />
+              <Route path="/" element={<Landing />} />
               <Route path="/onboarding" element={<SelectRepository />} />
               <Route path="/onboarding/configure" element={<ConfigureAnalysis />} />
               <Route path="/onboarding/analyze" element={<AnalysisProgress />} />
