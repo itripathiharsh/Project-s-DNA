@@ -1,22 +1,23 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform, useMotionTemplate, useMotionValue } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Float, Box, Sphere, MeshDistortMaterial, Line } from '@react-three/drei';
+import { OrbitControls, Float, Sphere, Line, Preload, Points, PointMaterial } from '@react-three/drei';
 import Lenis from 'lenis';
 import * as THREE from 'three';
-import { Terminal, Network, BrainCircuit, ShieldAlert, Cpu, ChevronRight, Mail } from 'lucide-react';
+import { Terminal, Network, BrainCircuit, ShieldAlert, Cpu, ChevronRight, Mail, GitPullRequest, Code2, Zap } from 'lucide-react';
 
 // -----------------------------------------------------------------------------
-// 1. Smooth Scrolling Wrapper (Lenis)
+// 1. Smooth Scrolling Wrapper
 // -----------------------------------------------------------------------------
 const SmoothScroll = ({ children }) => {
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.5,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       direction: 'vertical',
       smooth: true,
+      smoothTouch: false,
     });
     function raf(time) {
       lenis.raf(time);
@@ -29,123 +30,68 @@ const SmoothScroll = ({ children }) => {
 };
 
 // -----------------------------------------------------------------------------
-// 2. DNA Helix 3D Component
+// 2. High-End 3D Particles (Abstract DNA/Data stream)
 // -----------------------------------------------------------------------------
-const DNAHelix = () => {
-  const groupRef = useRef();
+const DataParticles = () => {
+  const ref = useRef();
+  
+  const particlesCount = 3000;
+  const positions = useMemo(() => {
+    const pos = new Float32Array(particlesCount * 3);
+    for (let i = 0; i < particlesCount; i++) {
+      const r = Math.random() * 10 + 2;
+      const theta = 2 * Math.PI * Math.random();
+      const z = (Math.random() - 0.5) * 40;
+      pos[i * 3] = r * Math.cos(theta);
+      pos[i * 3 + 1] = r * Math.sin(theta);
+      pos[i * 3 + 2] = z;
+    }
+    return pos;
+  }, [particlesCount]);
+
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
-    if (groupRef.current) {
-      groupRef.current.rotation.y = t * 0.3;
-      groupRef.current.position.y = Math.sin(t * 0.5) * 0.5;
+    if (ref.current) {
+      ref.current.rotation.z = t * 0.05;
+      ref.current.rotation.y = Math.sin(t * 0.1) * 0.2;
     }
   });
 
-  const numPairs = 15;
-  const radius = 1.5;
-  const height = 8;
-  const pairs = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < numPairs; i++) {
-      const y = (i / numPairs - 0.5) * height;
-      const angle = i * 0.5;
-      arr.push({ id: i, y, angle });
-    }
-    return arr;
-  }, [numPairs]);
-
   return (
-    <group ref={groupRef} position={[0, 0, 0]} scale={1.2}>
-      {pairs.map((p) => (
-        <group key={p.id} position={[0, p.y, 0]} rotation={[0, p.angle, 0]}>
-          <Sphere args={[0.25, 32, 32]} position={[-radius, 0, 0]}>
-            <MeshDistortMaterial color="#9d4edd" emissive="#5a189a" emissiveIntensity={0.8} distort={0.3} speed={2} />
-          </Sphere>
-          <Sphere args={[0.25, 32, 32]} position={[radius, 0, 0]}>
-            <MeshDistortMaterial color="#00f5d4" emissive="#00bbf9" emissiveIntensity={0.8} distort={0.3} speed={2} />
-          </Sphere>
-          <mesh rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.02, 0.02, radius * 2]} />
-            <meshStandardMaterial color="#333" transparent opacity={0.5} />
-          </mesh>
-        </group>
-      ))}
+    <group ref={ref}>
+      <Points positions={positions} stride={3} frustumCulled={false}>
+        <PointMaterial transparent color="#ffffff" size={0.03} sizeAttenuation={true} depthWrite={false} opacity={0.4} />
+      </Points>
     </group>
   );
 };
 
 // -----------------------------------------------------------------------------
-// 3. Code City 3D Component
+// 3. Floating Node Graph (Premium Abstract)
 // -----------------------------------------------------------------------------
-const CodeCity = () => {
-  const cityRef = useRef();
-  useFrame((state) => {
-    const t = state.clock.getElapsedTime();
-    if (cityRef.current) {
-      cityRef.current.rotation.y = t * 0.05;
-    }
-  });
-
-  const buildings = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < 80; i++) {
-      const x = (Math.random() - 0.5) * 30;
-      const z = (Math.random() - 0.5) * 30;
-      const h = Math.random() * 8 + 1;
-      const isHotspot = Math.random() > 0.9;
-      const color = isHotspot ? '#ff0055' : Math.random() > 0.5 ? '#9d4edd' : '#00f5d4';
-      arr.push({ x, z, h, color, isHotspot });
-    }
-    return arr;
-  }, []);
-
-  return (
-    <group ref={cityRef}>
-      {buildings.map((b, i) => (
-        <Box key={i} args={[0.8, b.h, 0.8]} position={[b.x, b.h / 2 - 4, b.z]}>
-          <meshStandardMaterial 
-            color={b.color} 
-            emissive={b.color} 
-            emissiveIntensity={b.isHotspot ? 1 : 0.2} 
-            wireframe={!b.isHotspot && Math.random() > 0.7} 
-          />
-        </Box>
-      ))}
-      <gridHelper args={[40, 40, '#222', '#111']} position={[0, -4, 0]} />
-    </group>
-  );
-};
-
-// -----------------------------------------------------------------------------
-// 4. Knowledge Graph 3D Component
-// -----------------------------------------------------------------------------
-const NodeGraph3D = () => {
+const AbstractGraph = () => {
   const groupRef = useRef();
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
     if (groupRef.current) {
-      groupRef.current.rotation.y = t * 0.1;
-      groupRef.current.rotation.x = Math.sin(t * 0.05) * 0.2;
+      groupRef.current.rotation.y = t * 0.15;
+      groupRef.current.rotation.x = Math.sin(t * 0.1) * 0.1;
     }
   });
 
   const nodes = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < 20; i++) {
-      arr.push(new THREE.Vector3(
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10
-      ));
-    }
-    return arr;
+    return Array.from({ length: 25 }, () => new THREE.Vector3(
+      (Math.random() - 0.5) * 8,
+      (Math.random() - 0.5) * 8,
+      (Math.random() - 0.5) * 8
+    ));
   }, []);
 
   const lines = useMemo(() => {
     const arr = [];
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
-        if (nodes[i].distanceTo(nodes[j]) < 4.5) {
+        if (nodes[i].distanceTo(nodes[j]) < 3.5) {
           arr.push([nodes[i], nodes[j]]);
         }
       }
@@ -156,236 +102,231 @@ const NodeGraph3D = () => {
   return (
     <group ref={groupRef}>
       {nodes.map((pos, i) => (
-        <Sphere key={i} args={[0.15, 16, 16]} position={pos}>
-          <meshStandardMaterial color={i === 0 ? "#ff0055" : "#00f5d4"} emissive={i === 0 ? "#ff0055" : "#00f5d4"} emissiveIntensity={0.8} />
+        <Sphere key={i} args={[0.08, 16, 16]} position={pos}>
+          <meshBasicMaterial color={i % 3 === 0 ? "#fff" : "#666"} transparent opacity={0.8} />
         </Sphere>
       ))}
       {lines.map((pts, i) => (
-        <Line key={i} points={pts} color="#444" lineWidth={1} transparent opacity={0.3} />
+        <Line key={i} points={pts} color="#444" lineWidth={1} transparent opacity={0.2} />
       ))}
     </group>
   );
 };
 
 // -----------------------------------------------------------------------------
-// 5. Hero Section (Split Layout)
+// 4. Glow Background & Grid Overlays
+// -----------------------------------------------------------------------------
+const BackgroundOverlay = () => (
+  <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-black">
+    {/* Subtle grid pattern */}
+    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+    
+    {/* Animated glow blobs */}
+    <motion.div 
+      animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-purple-900/30 rounded-full blur-[120px]" 
+    />
+    <motion.div 
+      animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2] }}
+      transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      className="absolute top-1/2 -left-40 w-[500px] h-[500px] bg-blue-900/20 rounded-full blur-[120px]" 
+    />
+  </div>
+);
+
+// -----------------------------------------------------------------------------
+// 5. Hero Section (Ultra Premium)
 // -----------------------------------------------------------------------------
 const Hero = () => {
   const navigate = useNavigate();
+  const { scrollY } = useScroll();
+  const y = useTransform(scrollY, [0, 1000], [0, 200]);
+  const opacity = useTransform(scrollY, [0, 500], [1, 0]);
 
   return (
-    <section className="relative min-h-screen w-full flex items-center bg-[#000] overflow-hidden">
-      {/* Background radial glow */}
-      <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 blur-[120px] rounded-full pointer-events-none opacity-50" />
-      
-      <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10 pt-20">
-        
-        {/* Left: Typography */}
-        <div className="flex flex-col items-start text-left">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-gray-300 text-xs font-semibold tracking-widest uppercase mb-8 backdrop-blur-md"
-          >
-            <span className="w-2 h-2 rounded-full bg-signal-cyan animate-pulse" />
-            Project DNA Engine
-          </motion.div>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
-            className="text-6xl lg:text-7xl xl:text-8xl font-black text-white tracking-tighter leading-[1.1] mb-6"
-          >
-            Understand <br/>
-            Software. <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-300 to-gray-600">
-              Completely.
-            </span>
-          </motion.h1>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="text-lg text-gray-400 max-w-lg mb-10 leading-relaxed font-light"
-          >
-            Transform any repository into a living, interactive knowledge graph. 
-            Discover architectural flaws, mitigate risks, and let the AI guide your next refactor.
-          </motion.p>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
-            className="flex flex-wrap items-center gap-4"
-          >
-            <button
-              onClick={() => navigate('/onboarding')}
-              className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition-all duration-300"
-            >
-              Analyze Repository
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={() => document.getElementById('pipeline').scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-4 bg-transparent border border-white/20 text-white font-semibold rounded-full hover:bg-white/5 transition-all duration-300"
-            >
-              Explore Features
-            </button>
-          </motion.div>
-        </div>
-
-        {/* Right: 3D Canvas */}
-        <div className="h-[60vh] lg:h-[90vh] w-full relative">
-          <Canvas camera={{ position: [0, 0, 8], fov: 40 }}>
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={2} />
-            <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
-              <DNAHelix />
-            </Float>
-          </Canvas>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// -----------------------------------------------------------------------------
-// 6. Bento Grid Features (The DNA Pipeline)
-// -----------------------------------------------------------------------------
-const PipelineSection = () => {
-  return (
-    <section id="pipeline" className="py-32 px-6 bg-[#000] relative">
-      <div className="max-w-7xl mx-auto">
-        
-        <div className="mb-20">
-          <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-4">
-            The DNA Pipeline
-          </h2>
-          <p className="text-gray-400 text-lg max-w-2xl font-light">
-            From raw source code to a fully queryable, AI-driven knowledge base in seconds. 
-            A unified engine for architectural intelligence.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
-          
-          {/* Bento Box 1: Knowledge Graph (Large) */}
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-            className="md:col-span-2 md:row-span-2 rounded-3xl bg-[#0a0a0a] border border-white/10 p-8 relative overflow-hidden group hover:border-white/20 transition-colors"
-          >
-            <div className="absolute inset-0 z-0 opacity-40 group-hover:opacity-80 transition-opacity duration-700">
-              <Canvas camera={{ position: [0, 0, 12], fov: 45 }}>
-                <ambientLight intensity={0.5} />
-                <NodeGraph3D />
-              </Canvas>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent z-10" />
-            <div className="relative z-20 h-full flex flex-col justify-end">
-              <Network className="w-10 h-10 text-signal-cyan mb-4" />
-              <h3 className="text-3xl font-bold text-white mb-2">Semantic Knowledge Graph</h3>
-              <p className="text-gray-400 max-w-md leading-relaxed">
-                We parse your codebase into a multi-dimensional graph. Every function, class, and module is mapped, revealing hidden dependencies and architectural coupling.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Bento Box 2: AST Parsing */}
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="rounded-3xl bg-[#0a0a0a] border border-white/10 p-8 flex flex-col justify-between group hover:border-white/20 transition-colors"
-          >
-            <Cpu className="w-8 h-8 text-signal-rose mb-4" />
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">AST Parsing</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Deep structural analysis of your source code. We extract entities without executing code, keeping it safe and blazing fast.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Bento Box 3: AI Intelligence */}
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="rounded-3xl bg-gradient-to-br from-[#0a0a0a] to-primary/10 border border-white/10 p-8 flex flex-col justify-between group hover:border-primary/30 transition-colors"
-          >
-            <BrainCircuit className="w-8 h-8 text-primary mb-4" />
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">AI Intelligence</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Evidence-backed reasoning. Our AI doesn't hallucinate; it reads the graph to give you deterministic, exact refactoring steps.
-              </p>
-            </div>
-          </motion.div>
-
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// -----------------------------------------------------------------------------
-// 7. Interactive Code City Section
-// -----------------------------------------------------------------------------
-const CodeCitySection = () => {
-  return (
-    <section className="h-[90vh] w-full relative bg-[#000] border-y border-white/10 overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [15, 12, 15], fov: 45 }}>
-          <ambientLight intensity={0.2} />
-          <directionalLight position={[10, 20, 10]} intensity={1.5} color="#fff" />
-          <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.3} maxPolarAngle={Math.PI / 2.2} />
-          <CodeCity />
+    <motion.section style={{ y, opacity }} className="relative min-h-screen w-full flex flex-col items-center justify-center pt-20 px-6 z-10">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Canvas camera={{ position: [0, 0, 20], fov: 60 }}>
+          <ambientLight intensity={0.1} />
+          <DataParticles />
+          <Preload all />
         </Canvas>
       </div>
-      
-      {/* Vignette Overlays */}
-      <div className="absolute inset-0 z-10 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-[#000]/40 to-[#000]" />
-      
-      <div className="absolute bottom-16 left-6 md:left-16 z-20 max-w-lg pointer-events-none">
+
+      <div className="relative z-10 flex flex-col items-center text-center max-w-5xl mx-auto">
+        
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="p-8 rounded-3xl bg-black/60 border border-white/10 backdrop-blur-md"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-md mb-8"
         >
-          <div className="flex items-center gap-3 mb-4">
-            <ShieldAlert className="w-6 h-6 text-signal-rose" />
-            <h2 className="text-2xl font-bold text-white">Visual Hotspots</h2>
-          </div>
-          <p className="text-gray-400 leading-relaxed font-light">
-            Code City renders your folders as districts and files as buildings. Height represents complexity. Glowing red structures highlight high-churn, high-risk code that demands immediate attention.
-          </p>
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          <span className="text-xs font-medium tracking-widest text-gray-300 uppercase">The Software Intelligence Engine</span>
         </motion.div>
+        
+        <motion.h1 
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+          className="text-6xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter leading-[0.9] mb-8"
+        >
+          Decode Your <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500">
+            Architecture.
+          </span>
+        </motion.h1>
+        
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+          className="text-xl md:text-2xl text-gray-400 max-w-2xl mb-12 font-light leading-relaxed"
+        >
+          Transform raw source code into a living, queryable knowledge graph. 
+          Uncover hidden risks, technical debt, and architectural flaws instantly.
+        </motion.p>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+          className="flex flex-col sm:flex-row items-center gap-6"
+        >
+          <button
+            onClick={() => navigate('/onboarding')}
+            className="group relative inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full overflow-hidden transition-transform active:scale-95"
+          >
+            <div className="absolute inset-0 w-full h-full bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="relative z-10 flex items-center gap-2">
+              Initialize Workspace
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </button>
+          
+          <a href="#pipeline" className="text-gray-400 hover:text-white font-medium transition-colors flex items-center gap-2">
+            Explore Engine <ChevronRight className="w-4 h-4" />
+          </a>
+        </motion.div>
+      </div>
+      
+      {/* Scroll indicator */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1, duration: 1 }}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
+      >
+        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">Scroll</span>
+        <div className="w-[1px] h-12 bg-gradient-to-b from-gray-500 to-transparent" />
+      </motion.div>
+    </motion.section>
+  );
+};
+
+// -----------------------------------------------------------------------------
+// 6. Premium Bento Grid (Features)
+// -----------------------------------------------------------------------------
+const BentoCard = ({ children, className = "", delay = 0 }) => {
+  const [mouseX, setMouseX] = useState(0);
+  const [mouseY, setMouseY] = useState(0);
+
+  function handleMouseMove({ currentTarget, clientX, clientY }) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    setMouseX(clientX - left);
+    setMouseY(clientY - top);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
+      onMouseMove={handleMouseMove}
+      className={`relative group rounded-3xl bg-[#050505] border border-white/10 overflow-hidden ${className}`}
+    >
+      <motion.div
+        className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 group-hover:opacity-100 transition duration-500"
+        style={{
+          background: useMotionTemplate`radial-gradient(400px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.1), transparent 80%)`
+        }}
+      />
+      {children}
+    </motion.div>
+  );
+};
+
+const PipelineSection = () => {
+  return (
+    <section id="pipeline" className="py-40 px-6 relative z-10">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-24">
+          <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-6">
+            The Intelligence Pipeline.
+          </h2>
+          <p className="text-gray-400 text-xl max-w-2xl mx-auto font-light leading-relaxed">
+            A deterministic engine that reads code like a compiler, but reasons about it like an architect.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[320px]">
+          
+          <BentoCard className="md:col-span-2 md:row-span-2 p-10 flex flex-col justify-end" delay={0}>
+            <div className="absolute inset-0 z-0 opacity-40 mix-blend-screen pointer-events-none">
+              <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
+                <AbstractGraph />
+              </Canvas>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent z-10" />
+            <div className="relative z-20">
+              <Network className="w-12 h-12 text-white mb-6" />
+              <h3 className="text-4xl font-bold text-white mb-4 tracking-tight">Entity Graph Mapping</h3>
+              <p className="text-gray-400 text-lg max-w-md leading-relaxed font-light">
+                Every function, class, and module is mapped into a rich multi-dimensional graph. Discover hidden dependencies and circular references instantly.
+              </p>
+            </div>
+          </BentoCard>
+
+          <BentoCard className="p-8 flex flex-col justify-between" delay={0.1}>
+            <Code2 className="w-8 h-8 text-gray-300" />
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">AST Parsing</h3>
+              <p className="text-gray-400 text-sm leading-relaxed font-light">
+                Lightning fast static analysis. We parse the syntax tree to extract deep structural evidence without executing your code.
+              </p>
+            </div>
+          </BentoCard>
+
+          <BentoCard className="p-8 flex flex-col justify-between bg-gradient-to-br from-[#050505] to-[#111]" delay={0.2}>
+            <BrainCircuit className="w-8 h-8 text-white" />
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">AI Reasoning</h3>
+              <p className="text-gray-400 text-sm leading-relaxed font-light">
+                No hallucinations. Our AI uses explicit codebase evidence to generate exact, actionable refactoring recommendations.
+              </p>
+            </div>
+          </BentoCard>
+
+        </div>
       </div>
     </section>
   );
 };
 
 // -----------------------------------------------------------------------------
-// 8. Live Terminal / Features Section
+// 7. Interactive Terminal / Real-time Output
 // -----------------------------------------------------------------------------
 const TerminalSection = () => {
   const [text, setText] = useState('');
   const fullText = `> Executing Project DNA Engine...
+> Reading repository structure...
 > Extracting AST from 1,204 files... [DONE 0.4s]
-> Mapping dependency graph... [DONE 0.2s]
+> Constructing entity graph... [DONE 0.2s]
 > Detecting circular references... [FOUND 3]
 > Analyzing security hotspots... [FOUND 1]
-> Compiling metrics... [DONE]
+> Compiling churn & complexity metrics... [DONE]
 > 
 > SYSTEM READY.
 > Awaiting intelligence queries...`;
@@ -401,65 +342,55 @@ const TerminalSection = () => {
   }, []);
 
   return (
-    <section className="py-32 px-6 bg-[#000] relative overflow-hidden">
-      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-20 items-center">
+    <section className="py-40 px-6 relative z-10 border-t border-white/5">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         
-        <div className="flex-1 space-y-8">
-          <h2 className="text-4xl md:text-6xl font-black text-white leading-tight tracking-tight">
-            Real-time <br className="hidden md:block"/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-signal-cyan to-signal-blue pb-2 block">Intelligence</span>
+        <div className="order-2 lg:order-1 relative group w-full">
+          <div className="absolute -inset-1 bg-gradient-to-r from-gray-800 to-gray-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000" />
+          <div className="relative rounded-2xl border border-white/10 bg-[#0a0a0a] overflow-hidden shadow-2xl">
+            <div className="flex items-center px-4 py-3 bg-[#111] border-b border-white/5 gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+              <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+              <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
+              <div className="ml-4 text-[10px] text-gray-500 font-mono tracking-widest uppercase">engine ~ process</div>
+            </div>
+            <div className="p-6 font-mono text-sm text-gray-300 min-h-[300px] leading-relaxed whitespace-pre-wrap">
+              {text}
+              <span className="animate-pulse inline-block w-2 h-4 bg-gray-300 ml-1 translate-y-1" />
+            </div>
+          </div>
+        </div>
+
+        <div className="order-1 lg:order-2 space-y-8">
+          <h2 className="text-4xl md:text-5xl font-black text-white leading-tight tracking-tighter">
+            Real-time <br />
+            Intelligence.
           </h2>
-          <p className="text-lg text-gray-400 font-light max-w-md">
-            The engine builds a deterministic semantic graph of your entire architecture. 
-            Ask complex questions, simulate refactoring impacts, and generate production-ready documentation instantly.
+          <p className="text-lg text-gray-400 font-light leading-relaxed">
+            Ask complex architectural questions in plain English. The engine traces the exact files, dependencies, and historical commits to give you a definitive answer.
           </p>
           
-          <ul className="space-y-5">
+          <ul className="space-y-6 pt-4">
             {[
-              'Predictive Analytics & Forecasting', 
-              'Automated Refactoring Suite', 
-              'Security & Risk Heatmaps', 
-              'Semantic Repository Search'
-            ].map((feature, i) => (
+              { icon: Zap, text: 'Predictive Analytics & Forecasting' },
+              { icon: GitPullRequest, text: 'Automated Refactoring Suite' },
+              { icon: ShieldAlert, text: 'Security & Risk Heatmaps' },
+            ].map((item, i) => (
               <motion.li 
                 key={i} 
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 className="flex items-center gap-4 text-gray-300 font-medium"
               >
-                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                  <div className="w-2 h-2 rounded-full bg-white" />
+                <div className="w-10 h-10 rounded-full bg-[#111] border border-white/10 flex items-center justify-center">
+                  <item.icon className="w-4 h-4 text-white" />
                 </div>
-                {feature}
+                {item.text}
               </motion.li>
             ))}
           </ul>
-        </div>
-
-        <div className="flex-1 w-full relative">
-          {/* Glow behind terminal */}
-          <div className="absolute inset-0 bg-signal-cyan/20 blur-[100px] rounded-full pointer-events-none" />
-          
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#0a0a0a] relative z-10"
-          >
-            <div className="flex items-center px-4 py-4 bg-[#111] border-b border-white/5 gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#ff5f56]" />
-              <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-              <div className="w-3 h-3 rounded-full bg-[#27c93f]" />
-              <div className="ml-4 text-xs text-gray-500 font-mono tracking-widest uppercase">dna-engine ~ bash</div>
-            </div>
-            <div className="p-6 font-mono text-sm text-signal-cyan min-h-[300px] leading-relaxed whitespace-pre-wrap selection:bg-signal-cyan/30">
-              {text}
-              <span className="animate-pulse">_</span>
-            </div>
-          </motion.div>
         </div>
 
       </div>
@@ -468,88 +399,89 @@ const TerminalSection = () => {
 };
 
 // -----------------------------------------------------------------------------
-// 9. Footer / Final CTA Section
+// 8. Footer / Final CTA
 // -----------------------------------------------------------------------------
-const CTAFooter = () => {
+const Footer = () => {
   const navigate = useNavigate();
   return (
-    <footer className="relative flex flex-col items-center justify-center overflow-hidden bg-[#000] border-t border-white/10 pt-32 pb-12 px-6">
-      <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
-        <Canvas camera={{ position: [0, 0, 15] }}>
-          <ambientLight intensity={0.5} />
-          <Float speed={2} floatIntensity={2}>
-            <DNAHelix />
-          </Float>
-        </Canvas>
-      </div>
+    <footer className="relative flex flex-col items-center justify-center overflow-hidden border-t border-white/10 pt-40 pb-12 px-6 z-10 bg-[#000]">
       
-      <div className="absolute inset-0 bg-gradient-to-t from-[#000] via-[#000]/80 to-transparent z-10 pointer-events-none" />
-
       <motion.div 
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8 }}
-        className="relative z-20 text-center max-w-2xl mb-32"
+        className="relative z-20 text-center max-w-3xl mb-40"
       >
-        <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">Ready to Decode?</h2>
-        <p className="text-xl text-gray-400 mb-10 font-light">Stop guessing. Start understanding. The future of software intelligence is here.</p>
+        <h2 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter">Stop Guessing.</h2>
+        <p className="text-xl text-gray-400 mb-12 font-light leading-relaxed">
+          The future of software intelligence is here. Start analyzing your repositories with deterministic precision today.
+        </p>
         
         <button
           onClick={() => navigate('/onboarding')}
-          className="group inline-flex items-center gap-2 px-10 py-5 bg-white text-black font-bold text-lg rounded-full hover:scale-105 transition-all duration-300 shadow-[0_0_40px_rgba(255,255,255,0.2)]"
+          className="px-10 py-5 bg-white text-black font-semibold rounded-full hover:scale-105 transition-transform duration-300"
         >
           Initialize Workspace
-          <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
       </motion.div>
 
       {/* Credits */}
-      <div className="relative z-20 flex flex-col items-center gap-4 text-gray-500 text-sm">
-        <div className="flex items-center gap-6 mb-2">
+      <div className="relative z-20 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-gray-500 text-sm border-t border-white/5 pt-8">
+        <div className="flex items-center gap-2 font-medium tracking-wide">
+          <div className="w-6 h-6 rounded bg-white flex items-center justify-center text-black font-black text-xs mr-2">D</div>
+          Project DNA
+        </div>
+        
+        <div className="flex items-center gap-6">
           <a href="https://github.com/itripathiharsh" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.02c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A4.8 4.8 0 0 0 9 18.22v3.78"/><path d="M9 18.22c-3.23.95-3.23-2.03-5.23-2.03"/></svg> GitHub
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.02c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A4.8 4.8 0 0 0 9 18.22v3.78"/><path d="M9 18.22c-3.23.95-3.23-2.03-5.23-2.03"/></svg>
+            GitHub
           </a>
           <a href="mailto:harsh.tripathi.cs@gmail.com" className="hover:text-white transition-colors flex items-center gap-2">
             <Mail className="w-4 h-4" /> Contact
           </a>
         </div>
-        <p className="tracking-widest uppercase text-xs font-semibold">MADE BY Harsh vvardhan tripathi</p>
-        <p className="text-gray-600">&copy; {new Date().getFullYear()} Project DNA.</p>
+
+        <div className="text-right">
+          <p className="tracking-widest uppercase text-[10px] font-bold text-gray-400 mb-1">Made By</p>
+          <p className="text-gray-300 font-medium tracking-wide">Harsh Vardhan Tripathi</p>
+        </div>
       </div>
     </footer>
   );
 };
 
 // -----------------------------------------------------------------------------
-// Main Landing Page Component
+// Main Component
 // -----------------------------------------------------------------------------
 export default function Landing() {
   return (
     <SmoothScroll>
       <div className="min-h-screen bg-[#000] text-white font-sans selection:bg-white/20">
+        <BackgroundOverlay />
         
         {/* Minimal Nav */}
-        <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 flex justify-between items-center bg-[#000]/50 backdrop-blur-xl border-b border-white/5">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-black font-black text-xl">
-              D
-            </div>
+        <nav className="fixed top-0 left-0 right-0 z-50 px-6 py-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+          <div className="flex items-center gap-3 pointer-events-auto cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-black font-black text-xl">D</div>
             <span className="font-bold text-white tracking-wide">Project DNA</span>
           </div>
-          <a href="/onboarding" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">
-            Launch App &rarr;
-          </a>
+          <button 
+            onClick={() => window.location.href='/onboarding'} 
+            className="pointer-events-auto text-sm font-medium text-gray-400 hover:text-white transition-colors px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md"
+          >
+            Launch App
+          </button>
         </nav>
 
         <main>
           <Hero />
           <PipelineSection />
-          <CodeCitySection />
           <TerminalSection />
         </main>
         
-        <CTAFooter />
+        <Footer />
       </div>
     </SmoothScroll>
   );
