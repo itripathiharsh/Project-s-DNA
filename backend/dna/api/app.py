@@ -11,8 +11,15 @@ from dna.api.routers import search as search_router
 from dna.api.routers import streaming as streaming_router
 from dna.api.routers import advanced as advanced_router
 from dna.api.routers import heatmaps as heatmaps_router
+from dna.api.routers import predictive as predictive_router
+from dna.api.routers import refactoring_suite as refactoring_suite_router
+from dna.api.routers import journeys as journeys_router
+from dna.api.routers import documentation as documentation_router
+from dna.api.routers import intake as intake_router
+from dna.api.routers import benchmarking as benchmarking_router
+from dna.api.routers import intelligence as intelligence_router
 from dna.api.auth import require_auth
-from dna.api.middleware import TimeoutMiddleware, RateLimitMiddleware
+from dna.api.middleware import TimeoutMiddleware, RateLimitMiddleware, BranchMiddleware
 from dna.remote import is_github_url, get_local_repo_from_github
 from fastapi.staticfiles import StaticFiles
 import os
@@ -62,7 +69,15 @@ app.include_router(search_router.router)
 app.include_router(streaming_router.router)
 app.include_router(advanced_router.router)
 app.include_router(heatmaps_router.router)
+app.include_router(predictive_router.router)
+app.include_router(refactoring_suite_router.router)
+app.include_router(journeys_router.router)
+app.include_router(documentation_router.router)
+app.include_router(intake_router.router)
+app.include_router(benchmarking_router.router)
+app.include_router(intelligence_router.router)
 
+app.add_middleware(BranchMiddleware)
 
 @app.middleware("http")
 async def add_correlation_id_middleware(request: Request, call_next):
@@ -88,6 +103,7 @@ async def serve_frontend():
 
 class AnalysisRequest(BaseModel):
     repo_path: str
+    branch: str = None
 
 
 class AnalysisResponse(BaseModel):
@@ -117,6 +133,10 @@ async def status():
 def validate_repo_path(path: str) -> str:
     if not path:
         raise ValueError("Repository path must not be empty")
+        
+    # Prevent null bytes and control characters
+    if "\0" in path or any(ord(c) < 32 for c in path):
+        raise ValueError("Invalid characters in path")
     
     # Normalize and resolve to absolute path
     resolved_path = os.path.abspath(path)
@@ -133,6 +153,10 @@ def validate_repo_path(path: str) -> str:
     if not os.path.isdir(resolved_path):
         raise ValueError(f"Repository path is not a directory: {resolved_path}")
         
+    # Must be a git repository to prevent arbitrary directory reading
+    if not os.path.isdir(os.path.join(resolved_path, ".git")):
+        raise ValueError(f"Path is not a valid git repository: {resolved_path}")
+        
     # Check accessible
     if not os.access(resolved_path, os.R_OK):
         raise ValueError(f"Repository path is not accessible: {resolved_path}")
@@ -140,7 +164,7 @@ def validate_repo_path(path: str) -> str:
     return resolved_path
 
 
-def resolve_path(input_path: str) -> tuple[str, str | None]:
+def resolve_path(input_path: str, branch: str = None) -> tuple[str, str | None]:
     """Resolve a repo path that may be a local path or a GitHub URL.
     
     Returns:
@@ -151,19 +175,20 @@ def resolve_path(input_path: str) -> tuple[str, str | None]:
     stripped = input_path.strip()
     if is_github_url(stripped):
         # GitHub URL — clone/fetch to cache and return the local path
-        local_path = get_local_repo_from_github(stripped)
+        local_path = get_local_repo_from_github(stripped, branch)
         return local_path, stripped
     else:
         # Local filesystem path — validate and return
         local_path = validate_repo_path(stripped)
+        # If it's a local path, we do NOT run git checkout to avoid side effects on the user's working directory.
         return local_path, None
 
 
 @app.post("/analyze", response_model=AnalysisResponse)
 async def analyze(req: AnalysisRequest):
     try:
-        local_path, github_url = await asyncio.to_thread(resolve_path, req.repo_path)
-        result = await asyncio.to_thread(run_full_analysis, local_path)
+        local_path, github_url = await asyncio.to_thread(resolve_path, req.repo_path, req.branch)
+        result = await asyncio.to_thread(run_full_analysis, local_path, req.branch)
         
         # For GitHub URLs, return the original URL (not the cache path)
         if github_url:
@@ -190,7 +215,16 @@ async def analyze_v1(req: AnalysisRequest):
 
 @app.get("/v1/analysis/latest", response_model=AnalysisResponse)
 async def get_latest_analysis():
-    latest_path = os.path.join(os.getcwd(), "latest_analysis.json")
+    from dna.api.context import current_branch
+    branch = current_branch.get("")
+    
+    branch_suffix = f"_{branch.replace('/', '_')}" if branch else ""
+    latest_path = os.path.join(os.getcwd(), f"latest_analysis{branch_suffix}.json")
+    
+    # Fallback to default if branch specific not found
+    if not os.path.isfile(latest_path) and branch:
+        latest_path = os.path.join(os.getcwd(), "latest_analysis.json")
+        
     if not os.path.isfile(latest_path):
         raise HTTPException(status_code=404, detail="No previous analysis found. Please run analysis first.")
     try:

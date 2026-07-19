@@ -268,10 +268,10 @@ export async function deleteTeam(teamId, options = {}) {
 
 // 9. AI Assistant
 export async function queryAssistant(query, options = {}) {
-  const res = await fetch(`${API_BASE}/v1/assistant`, { ...options,
+  const res = await fetch(`${API_BASE}/v1/intelligence/ask`, { ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ prompt: query }),
   });
   if (!res.ok) throw new Error(await readError(res));
   return res.json();
@@ -309,9 +309,9 @@ export async function getAdvancedArchitecture(viewType = 'dependency', options =
 }
 
 export async function postAdvancedChat(prompt, contextFiles = null, options = {}) {
-  const res = await fetch(`${API_BASE}/v1/advanced/chat`, { ...options,
+  const res = await fetch(`${API_BASE}/v1/intelligence/ask`, { ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify({ prompt, context_files: contextFiles }),
   });
   if (!res.ok) throw new Error(await readError(res));
@@ -321,7 +321,7 @@ export async function postAdvancedChat(prompt, contextFiles = null, options = {}
 export async function postAdvancedAction(actionType, targetFile = null, options = {}) {
   const res = await fetch(`${API_BASE}/v1/advanced/action`, { ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify({ action_type: actionType, target_file: targetFile }),
   });
   if (!res.ok) throw new Error(await readError(res));
@@ -460,6 +460,56 @@ export async function postBenchmarkingDiff(payload, options = {}) {
     headers: getHeaders(),
     body: JSON.stringify(payload)
   });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getIntelligenceEvidence(query, options = {}) {
+  const url = query ? `${API_BASE}/v1/intelligence/evidence?query=${query}` : `${API_BASE}/v1/intelligence/evidence`;
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getIntelligenceExplainCode(uid, filePath, options = {}) {
+  let url = `${API_BASE}/v1/intelligence/explain/code?`;
+  if (uid) url += `uid=${uid}&`;
+  if (filePath) url += `file_path=${filePath}&`;
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getIntelligenceRecommendations(options = {}) {
+  const res = await fetch(`${API_BASE}/v1/intelligence/recommendations`, options);
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function postIntelligenceRootCause(payload, options = {}) {
+  const res = await fetch(`${API_BASE}/v1/intelligence/root-cause`, {
+    ...options,
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function postIntelligenceImpact(payload, options = {}) {
+  const res = await fetch(`${API_BASE}/v1/intelligence/impact`, {
+    ...options,
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(await readError(res));
+  return res.json();
+}
+
+export async function getIntelligenceSearch(q, options = {}) {
+  const res = await fetch(`${API_BASE}/v1/intelligence/search?q=${q}`, options);
   if (!res.ok) throw new Error(await readError(res));
   return res.json();
 }
