@@ -10,7 +10,7 @@
 //
 // All calls are made same-origin (frontend is served by FastAPI).
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://project-dna-backend.onrender.com';
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 let currentBranch = '';
 
@@ -420,13 +420,13 @@ export async function getPredictiveForecast(options = {}) {
 }
 
 export async function getRefactoringAnalysis(options = {}) {
-  const res = await fetch(`${API_BASE}/v1/refactoring/analysis`, options);
+  const res = await fetch(`${API_BASE}/v1/refactoring-suite/analysis`, options);
   if (!res.ok) throw new Error(await readError(res));
   return res.json();
 }
 
 export async function simulateRefactoring(payload, options = {}) {
-  const res = await fetch(`${API_BASE}/v1/refactoring/simulate`, {
+  const res = await fetch(`${API_BASE}/v1/refactoring-suite/simulate`, {
     ...options,
     method: 'POST',
     headers: getHeaders(),
@@ -436,8 +436,8 @@ export async function simulateRefactoring(payload, options = {}) {
   return res.json();
 }
 
-export async function getFlowJourney(options = {}) {
-  const res = await fetch(`${API_BASE}/v1/insights/flow-journeys`, options);
+export async function getFlowJourney(journeyType, options = {}) {
+  const res = await fetch(`${API_BASE}/v1/journeys/${journeyType}`, options);
   if (!res.ok) throw new Error(await readError(res));
   return res.json();
 }

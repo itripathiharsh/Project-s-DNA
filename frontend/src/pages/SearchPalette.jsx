@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { globalSearch } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 
 export default function SearchPalette() {
   const [query, setQuery] = useState('');
@@ -11,6 +12,7 @@ export default function SearchPalette() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useNotification();
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ export default function SearchPalette() {
       setTotal(res.total || 0);
       setSearched(true);
     } catch (err) {
-      alert('Search failed: ' + err.message);
+      toast('Search failed: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }

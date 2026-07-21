@@ -22,10 +22,21 @@ def _git_repo_check(repo_path: str) -> None:
 def _relpath(file_path: str, repo_path: str) -> str:
     if os.path.isabs(file_path):
         try:
-            return os.path.relpath(file_path, repo_path)
+            rel = os.path.relpath(file_path, repo_path)
         except ValueError:
-            return file_path
-    return file_path
+            rel = file_path
+    else:
+        rel = file_path
+    # SECURITY: Block path traversal - prevent escaping repo root
+    norm_rel = os.path.normpath(rel)
+    if norm_rel.startswith("..") or norm_rel.startswith("~"):
+        raise ValueError(f"Path traversal detected in file path: {file_path}")
+    # Ensure the resolved path stays within the repository
+    candidate = os.path.normpath(os.path.join(repo_path, norm_rel))
+    repo_root = os.path.realpath(repo_path)
+    if not candidate.startswith(repo_root + os.sep) and candidate != repo_root:
+        raise ValueError(f"Path traversal detected: {file_path} resolves outside repository")
+    return norm_rel
 
 
 def _blame_one(repo_path: str, rel_path: str) -> dict[str, int]:
@@ -91,7 +102,10 @@ def get_files_blame(
     rel_paths = [(_relpath(fp, repo_path), fp) for fp in file_paths]
     out: dict[str, dict[str, int]] = {}
 
-    with ThreadPoolExecutor(max_workers=max(1, min(max_workers, len(rel_paths) or 1))) as pool:
+    from dna.threadpool import get_executor
+    pool = get_executor()
+
+    if True:
         future_to_path = {
             pool.submit(_blame_one, repo_path, rel): fp for rel, fp in rel_paths
         }

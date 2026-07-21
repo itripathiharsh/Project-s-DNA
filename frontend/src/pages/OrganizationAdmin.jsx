@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import { getTeams, updateTeam, deleteTeam } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 
 export default function OrganizationAdmin() {
   const [teams, setTeams] = useState([]);
@@ -11,6 +12,7 @@ export default function OrganizationAdmin() {
   const [membersStr, setMembersStr] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { toast, confirm } = useNotification();
 
   const loadTeams = async () => {
     try {
@@ -60,8 +62,9 @@ export default function OrganizationAdmin() {
       setMembersStr('');
       setTeamId('');
       await loadTeams();
+      toast('Team saved successfully', 'success');
     } catch (err) {
-      alert('Failed to save team: ' + err.message);
+      toast('Failed to save team: ' + err.message, 'error');
     }
   };
 
@@ -75,14 +78,16 @@ export default function OrganizationAdmin() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this team?')) return;
-    try {
-      await deleteTeam(id);
-      await loadTeams();
-    } catch (err) {
-      alert('Failed to delete team: ' + err.message);
-    }
+  const handleDelete = (id) => {
+    confirm('Are you sure you want to delete this team?', async () => {
+      try {
+        await deleteTeam(id);
+        await loadTeams();
+        toast('Team deleted successfully', 'success');
+      } catch (err) {
+        toast('Failed to delete team: ' + err.message, 'error');
+      }
+    });
   };
 
   const getAvatarColor = (name) => {

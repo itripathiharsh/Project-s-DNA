@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { analyzeRepository, getLatestAnalysis, setApiBranch, getHeaders } from '../services/api';
+import { API_BASE, analyzeRepository, getLatestAnalysis, setApiBranch, getHeaders } from '../services/api';
 
 const AnalysisContext = createContext(null);
 
@@ -19,19 +19,28 @@ export function AnalysisProvider({ children }) {
 
   const loadLatest = useCallback(async (options = {}) => {
     setLoading(true);
+    const timeoutAc = new AbortController();
+    const tid = setTimeout(() => timeoutAc.abort(), 15000);
+    if (options.signal) {
+      options.signal.addEventListener('abort', () => timeoutAc.abort(), { once: true });
+    }
     try {
-      const result = await getLatestAnalysis({ headers: getHeaders(), ...options });
-      setData(result);
+      const result = await getLatestAnalysis({
+        headers: getHeaders(), ...options, signal: timeoutAc.signal
+      });
+      clearTimeout(tid);
       if (result.repository?.path) {
         setRepoPath(result.repository.path);
       }
       return result;
     } catch (err) {
+      clearTimeout(tid);
       if (err.name !== 'AbortError') {
         console.log('No existing active analysis cached on backend:', err.message || err);
         setData(null);
       }
     } finally {
+      clearTimeout(tid);
       if (!options?.signal?.aborted) {
         setLoading(false);
       }
@@ -67,13 +76,10 @@ export function AnalysisProvider({ children }) {
       { step_id: 'reasoning',  message: 'Generating insights...',               percent: 95 },
     ];
 
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://project-dna-backend.onrender.com';
-
     (async () => {
       try {
         if (onEvent) onEvent({ type: 'connected' });
 
-        // Emit fake progress ticks every 4 s while the POST is in-flight
         let stepIdx = 0;
         stepInterval = setInterval(() => {
           if (cancelled || stepIdx >= PROGRESS_STEPS.length) {
@@ -85,7 +91,7 @@ export function AnalysisProvider({ children }) {
         }, 4000);
 
         // Single POST – may take several minutes on Render free tier, that is OK
-        const response = await fetch(`${apiBase}/v1/analyze`, {
+        const response = await fetch(`${API_BASE}/v1/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ repo_path: path }),
@@ -147,8 +153,6 @@ export function AnalysisProvider({ children }) {
       { step_id: 'reasoning',  message: `[${branch}] Generating insights...`,               percent: 95 },
     ];
 
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-
     (async () => {
       try {
         if (onEvent) onEvent({ type: 'connected', branch });
@@ -163,7 +167,7 @@ export function AnalysisProvider({ children }) {
           if (onEvent) onEvent({ type: 'progress', ...step, status: 'running', branch });
         }, 4000);
 
-        const response = await fetch(`${apiBase}/v1/analyze`, {
+        const response = await fetch(`${API_BASE}/v1/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ repo_path: path, branch: branch }),

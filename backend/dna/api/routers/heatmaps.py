@@ -135,8 +135,7 @@ async def get_change_heatmap(time_filter: str = Query("all", description="7d, 30
                 if latest_date is None or dt > latest_date:
                     latest_date = dt
             except Exception:
-                pass
-                
+                logger.debug("Failed to parse commit date: %s", c.get("date"))
     if latest_date is None:
         latest_date = datetime.datetime.now(datetime.timezone.utc)
 
@@ -155,7 +154,7 @@ async def get_change_heatmap(time_filter: str = Query("all", description="7d, 30
             elif time_filter == "90d" and diff.days > 90:
                 continue
         except Exception:
-            pass
+            logger.debug("Failed to parse commit date during filtering: %s", c.get("date"))
         filtered_commits.append(c)
 
     file_metrics = {}

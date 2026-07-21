@@ -1,74 +1,66 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnalysis } from '../../store/analysis';
 
-const FAKE_LOGS = [
-  { type: '[INFO]', msg: 'Initializing AST extraction...', color: 'text-signal-emerald' },
-  { type: '[TASK]', msg: 'Parsing module boundaries...', color: 'text-signal-cyan' },
-  { type: '[INFO]', msg: 'Analyzing call-graphs...', color: 'text-signal-emerald' },
-  { type: '[WARN]', msg: 'Checking circular dependencies...', color: 'text-signal-amber' },
-  { type: '[TASK]', msg: 'Generating knowledge graph metadata...', color: 'text-signal-cyan' },
-  { type: '[INFO]', msg: 'Running engines: structural, evolution, knowledge, risk...', color: 'text-signal-emerald' },
-  { type: '[TASK]', msg: 'Generating insights from evidence...', color: 'text-signal-cyan' },
-];
-
 export default function AnalysisProgress() {
   const navigate = useNavigate();
-  const { repoPath, runAnalysisStream, error } = useAnalysis();
+  const { repoPath, selectedBranches, runAnalysisStreamBranch, setActiveBranch } = useAnalysis();
+  const [currentBranchIndex, setCurrentBranchIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState([]);
-  useEffect(() => {
-    // Reset local state
-    setProgress(0);
-    setLogs([]);
+  const [overallError, setOverallError] = useState(null);
 
-    const stream = runAnalysisStream(repoPath, (data) => {
+  useEffect(() => {
+    if (!selectedBranches || selectedBranches.length === 0) {
+      navigate('/onboarding');
+      return;
+    }
+
+    const branch = selectedBranches[currentBranchIndex];
+    if (!branch) return;
+
+    setProgress(0);
+
+    const stream = runAnalysisStreamBranch(repoPath, branch, (data) => {
       if (data.type === 'connected') {
-        setLogs((prev) => [
-          ...prev,
-          { type: '[INFO]', msg: 'Connection established with analysis stream.', color: 'text-signal-emerald' }
-        ].slice(-20));
+        setLogs((prev) => [...prev, { type: '[INFO]', msg: `[${data.branch}] Connection established...`, color: 'text-signal-emerald' }].slice(-20));
       } else if (data.type === 'log') {
-        setLogs((prev) => [
-          ...prev,
-          { type: '[INFO]', msg: data.message, color: 'text-signal-emerald' }
-        ].slice(-20));
+        setLogs((prev) => [...prev, { type: '[INFO]', msg: `[${data.branch}] ${data.message}`, color: 'text-signal-emerald' }].slice(-20));
       } else if (data.type === 'progress') {
-        if (data.percent !== undefined) {
-          setProgress(data.percent);
-        }
+        if (data.percent !== undefined) setProgress(data.percent);
         const stepLabel = data.step_id ? data.step_id.replace('_', ' ').toUpperCase() : 'STEP';
         const color = data.status === 'success' ? 'text-signal-emerald' : data.status === 'failed' ? 'text-signal-rose' : 'text-signal-cyan';
-        setLogs((prev) => [
-          ...prev,
-          { type: `[${stepLabel}]`, msg: `${data.message || ''} (${data.status})`, color }
-        ].slice(-20));
+        setLogs((prev) => [...prev, { type: `[${stepLabel}]`, msg: `[${data.branch}] ${data.message || ''} (${data.status})`, color }].slice(-20));
       } else if (data.type === 'complete') {
         setProgress(100);
-        setLogs((prev) => [
-          ...prev,
-          { type: '[SUCCESS]', msg: 'Analysis completed successfully!', color: 'text-signal-emerald' }
-        ].slice(-20));
-        setTimeout(() => navigate('/onboarding/complete'), 1000);
+        setLogs((prev) => [...prev, { type: '[SUCCESS]', msg: `[${data.branch}] Analysis completed!`, color: 'text-signal-emerald' }].slice(-20));
+        
+        if (currentBranchIndex < selectedBranches.length - 1) {
+          setTimeout(() => setCurrentBranchIndex(prev => prev + 1), 1500);
+        } else {
+          setTimeout(() => {
+            if (selectedBranches.length > 0) {
+              setActiveBranch(selectedBranches[0]);
+            }
+            navigate('/onboarding/complete');
+          }, 1500);
+        }
       } else if (data.type === 'error') {
-        const errMsg = data.message || 'An unknown error occurred during analysis.';
-        setLogs((prev) => [
-          ...prev,
-          { type: '[ERROR]', msg: errMsg, color: 'text-signal-rose' }
-        ].slice(-20));
+        const errMsg = data.message || 'Unknown error occurred.';
+        setOverallError(`Error on branch ${data.branch}: ${errMsg}`);
+        setLogs((prev) => [...prev, { type: '[ERROR]', msg: `[${data.branch}] ${errMsg}`, color: 'text-signal-rose' }].slice(-20));
       }
     });
 
     return () => {
-      if (stream) {
-        stream.close();
-      }
+      if (stream) stream.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repoPath, navigate, runAnalysisStream]);
+  }, [currentBranchIndex, repoPath, selectedBranches, runAnalysisStreamBranch, navigate]);
 
   const circumference = 2 * Math.PI * 44;
   const offset = circumference - (progress / 100) * circumference;
+  const overallProgress = ((currentBranchIndex + (progress / 100)) / selectedBranches.length) * 100;
 
   return (
     <div className="min-h-screen bg-background text-on-surface font-body-md selection:bg-primary/30">
@@ -77,10 +69,6 @@ export default function AnalysisProgress() {
           <span className="font-headline-md text-headline-md font-bold text-on-surface">Project DNA</span>
           <div className="h-4 w-px bg-border-subtle" />
           <span className="text-primary font-bold border-b-2 border-primary pb-1 font-body-md">Analysis</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-on-surface">settings</span>
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-on-surface">help</span>
         </div>
       </header>
 
@@ -100,15 +88,26 @@ export default function AnalysisProgress() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-[42px] leading-none text-primary font-bold">{Math.floor(progress)}%</span>
-                <span className="font-label-caps text-label-caps text-on-surface-variant mt-1">PROCESSED</span>
+                <span className="font-label-caps text-label-caps text-on-surface-variant mt-1">BRANCH</span>
               </div>
             </div>
+            
+            <div className="w-64 bg-surface-container h-2 rounded-full mt-4 overflow-hidden">
+              <div 
+                className="bg-primary h-full transition-all duration-300"
+                style={{ width: `${overallProgress}%` }}
+              />
+            </div>
+            <div className="text-on-surface-variant text-sm mt-2">
+              Overall Progress: {Math.floor(overallProgress)}% ({currentBranchIndex + 1}/{selectedBranches.length} branches)
+            </div>
+
             <div className="mt-6 text-center">
               <h1 className="font-headline-lg text-headline-lg mb-2">
-                {error ? 'Analysis Failed' : 'Building Knowledge Graph'}
+                {overallError ? 'Analysis Failed' : `Analyzing ${selectedBranches[currentBranchIndex]}`}
               </h1>
               <p className="text-on-surface-variant font-body-md max-w-md">
-                {error ? error : 'Project DNA is mapping dependencies and identifying risk patterns for ' + (repoPath || 'your repository') + '.'}
+                {overallError ? overallError : 'Project DNA is mapping dependencies and identifying risk patterns.'}
               </p>
             </div>
           </div>
@@ -125,11 +124,6 @@ export default function AnalysisProgress() {
             </div>
             <div className="p-4 h-64 overflow-y-auto font-code-md text-code-md bg-black/40">
               <div className="space-y-1">
-                <div className="flex gap-4">
-                  <span className="text-text-muted select-none">{new Date().toLocaleTimeString()}</span>
-                  <span className="text-signal-emerald">[INFO]</span>
-                  <span className="text-on-surface">POST /v1/analyze — repo_path={repoPath || '…'}</span>
-                </div>
                 {logs.map((l, i) => (
                   <div key={i} className="flex gap-4">
                     <span className="text-text-muted select-none">{new Date().toLocaleTimeString()}</span>
@@ -137,19 +131,12 @@ export default function AnalysisProgress() {
                     <span className="text-on-surface">{l.msg}</span>
                   </div>
                 ))}
-                {!error && (
+                {!overallError && (
                   <div className="flex gap-4 items-center">
                     <span className="text-text-muted select-none">{new Date().toLocaleTimeString()}</span>
                     <span className="text-signal-rose animate-pulse-dna">[BUSY]</span>
                     <span className="text-on-surface">Awaiting response from backend…</span>
                     <span className="w-1.5 h-4 bg-primary animate-pulse" />
-                  </div>
-                )}
-                {error && (
-                  <div className="flex gap-4">
-                    <span className="text-text-muted select-none">{new Date().toLocaleTimeString()}</span>
-                    <span className="text-signal-rose">[ERROR]</span>
-                    <span className="text-signal-rose">{error}</span>
                   </div>
                 )}
               </div>
@@ -158,9 +145,9 @@ export default function AnalysisProgress() {
 
           <div className="flex gap-4 mt-8">
             <button onClick={() => navigate('/onboarding')} className="btn-secondary">
-              <span className="material-symbols-outlined">arrow_back</span> Back
+              <span className="material-symbols-outlined">arrow_back</span> Cancel
             </button>
-            {error && (
+            {overallError && (
               <button onClick={() => navigate('/onboarding')} className="btn-primary-lg">
                 <span className="material-symbols-outlined">refresh</span> Try Again
               </button>

@@ -261,7 +261,11 @@ class PipelineDAG:
                 raise ValueError(f"No task function registered for step '{step_id}'")
 
         # Topological dispatch loop
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        from concurrent.futures import ThreadPoolExecutor
+        # Use a dedicated executor per pipeline run to guarantee full isolation.
+        # The global shared executor can retain stale references across tests.
+        executor = ThreadPoolExecutor(max_workers=8)
+        try:
             futures: Dict[str, Future] = {}
             
             while len(completed) + len(failed) < total_steps:
@@ -351,5 +355,7 @@ class PipelineDAG:
 
                 # Prevent busy looping
                 time.sleep(0.05)
+        finally:
+            executor.shutdown(wait=True)
 
         return len(failed) == 0

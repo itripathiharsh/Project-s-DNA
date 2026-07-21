@@ -5,10 +5,13 @@ POST /v1/insights/generate — trigger fresh insight generation from the persist
 """
 import json
 import os
+import logging
 from fastapi import APIRouter, HTTPException, Query
 from dna.evidence.store import EvidenceStore
 from dna.reasoning.engine import generate_insights
 from dna.config import get_config
+
+logger = logging.getLogger("dna.api.insights")
 
 router = APIRouter(prefix="/v1/insights", tags=["insights"])
 
@@ -30,8 +33,14 @@ async def list_insights(
     if not os.path.exists(ev_path):
         return {"insights": [], "total": 0, "offset": offset, "limit": limit}
 
-    with EvidenceStore(ev_path) as store:
-        insights = generate_insights(store)
+    try:
+        latest_path = os.path.join(os.getcwd(), "latest_analysis.json")
+        with open(latest_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            insights = data.get("insights", [])
+    except Exception:
+        logger.debug("Failed to load latest_analysis.json, returning empty insights")
+        insights = []
 
     if category:
         insights = [i for i in insights if i.get("category") == category]

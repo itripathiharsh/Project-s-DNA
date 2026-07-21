@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { getPipelines, runPipelineStep } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 
 export default function RefactoringPipeline() {
   const [searchParams] = useSearchParams();
@@ -11,6 +12,7 @@ export default function RefactoringPipeline() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { toast } = useNotification();
 
   const loadPipeline = async () => {
     try {
@@ -52,8 +54,9 @@ export default function RefactoringPipeline() {
         : 'Compiler verification passed. Structural test suite executed in 240ms.';
       await runPipelineStep(pid, idx, 'success', logMsg);
       await loadPipeline();
+      toast('Step execution completed', 'success');
     } catch (err) {
-      alert('Step execution failed: ' + err.message);
+      toast('Step execution failed: ' + err.message, 'error');
       try {
         await runPipelineStep(pid, idx, 'failed', `Error: ${err.message || err}`);
         await loadPipeline();

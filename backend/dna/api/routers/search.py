@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from fastapi import APIRouter, Query, HTTPException
 from typing import Optional, List, Dict, Any
 
@@ -9,6 +10,7 @@ from dna.evidence.store import EvidenceStore
 from dna.storage.system import SystemDB
 from dna.reasoning.engine import generate_insights
 
+logger = logging.getLogger("dna.api.search")
 router = APIRouter(prefix="/v1/search", tags=["search"])
 
 def _get_store_path() -> str:
@@ -44,8 +46,7 @@ async def global_search(
                         "extra": r
                     })
         except Exception:
-            pass
-
+            logger.debug("Failed to load system DB for search")
     # 2. Load entities (files, symbols, classes, functions) from SCStore
     store_path = _get_store_path()
     has_store = os.path.exists(store_path)
@@ -56,7 +57,7 @@ async def global_search(
                 graph = store.load_entity_graph()
                 entities = list(graph.entities)
         except Exception:
-            pass
+            logger.debug("Failed to load SCStore for search")
 
     for e in entities:
         name_lower = e.name.lower()
@@ -119,8 +120,7 @@ async def global_search(
                 insights = generate_insights(store)
                 evidences = store.get_all()
         except Exception:
-            pass
-
+            logger.debug("Failed to load evidence store for search")
     # Insights
     if not type or type == "insights":
         for ins in insights:
@@ -155,8 +155,7 @@ async def global_search(
                                 "extra": c
                             })
                 except Exception:
-                    pass
-
+                    logger.debug("Failed to parse author contribution evidence")
     # Knowledge / general evidence
     if not type or type == "knowledge":
         for ev in evidences:
@@ -188,8 +187,7 @@ async def global_search(
                             "extra": val
                         })
                 except Exception:
-                    pass
-
+                    logger.debug("Failed to parse risk evidence")
     # Commits
     if not type or type == "commits":
         # Check commits in evidence (e.g. recent commits) or SystemDB
@@ -211,8 +209,7 @@ async def global_search(
                                     "extra": commit
                                 })
                 except Exception:
-                    pass
-
+                    logger.debug("Failed to parse commit evidence")
     return {
         "query": q,
         "type": type,

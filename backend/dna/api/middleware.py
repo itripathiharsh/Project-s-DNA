@@ -13,7 +13,7 @@ from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-ANALYSIS_TIMEOUT_SECONDS = 120
+ANALYSIS_TIMEOUT_SECONDS = 600
 RATE_LIMIT_PER_MINUTE = 10
 TIMED_ROUTES = {"/analyze", "/v1/analyze"}
 
@@ -82,3 +82,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         self._windows[ip].append(now)
         return await call_next(request)
+
+class BranchMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        from dna.api.context import current_branch
+        branch = request.headers.get("X-Branch", "")
+        token = current_branch.set(branch)
+        try:
+            return await call_next(request)
+        finally:
+            current_branch.reset(token)

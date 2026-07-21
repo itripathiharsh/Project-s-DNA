@@ -18,7 +18,7 @@ class DNAConfig:
         repo_cache_dir: str = "backend/cache/repos",
         repo_cache_ttl_days: int = 7,
         enable_remote_repos: bool = True,
-        git_clone_timeout: int = 120,
+        git_clone_timeout: int = 600,
         git_fetch_timeout: int = 30,
     ):
         self.max_file_size_bytes = max_file_size_bytes

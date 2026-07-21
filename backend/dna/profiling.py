@@ -128,20 +128,11 @@ def _count_items(result) -> str:
             return str(len(result))
         n = 0
         if hasattr(result, "files"):
-            try:
-                n += len(result.files)
-            except Exception:
-                pass
+            n += len(result.files)
         if hasattr(result, "entities"):
-            try:
-                n += len(result.entities)
-            except Exception:
-                pass
+            n += len(result.entities)
         if hasattr(result, "commits"):
-            try:
-                n += len(result.commits)
-            except Exception:
-                pass
+            n += len(result.commits)
         return str(n) if n else "?"
     except Exception:
         return "?"

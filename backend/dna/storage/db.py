@@ -35,22 +35,13 @@ def clear_db_registry():
         try:
             engine.dispose()
         except Exception:
-            pass
+            logger.warning("Failed to dispose engine for %s", url)
     _engines.clear()
     _sessions.clear()
 
-# Event listener to enforce SQLite foreign keys and WAL mode
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    try:
-        if hasattr(dbapi_connection, "execute"):
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.close()
-    except Exception:
-        pass
+import threading
+
+_db_init_lock = threading.Lock()
 
 def get_db_session(db_path_or_url: str = None):
     """
@@ -67,45 +58,65 @@ def get_db_session(db_path_or_url: str = None):
     if db_path_or_url in _sessions:
         return _sessions[db_path_or_url]()
 
-    logger.info("Initializing database registry entry for URL: %s", db_path_or_url)
-    
-    connect_args = {}
-    if db_path_or_url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
+    with _db_init_lock:
+        if db_path_or_url in _sessions:
+            return _sessions[db_path_or_url]()
 
-    from sqlalchemy.pool import NullPool
-    if db_path_or_url.startswith("sqlite"):
-        engine = create_engine(db_path_or_url, connect_args=connect_args, poolclass=NullPool)
-    else:
-        engine = create_engine(db_path_or_url, connect_args=connect_args, pool_pre_ping=True)
-    
-    # Enable SQLite pragmas
-    if db_path_or_url.startswith("sqlite"):
-        # Explicit trigger on connection for test databases
-        @event.listens_for(engine, "connect")
-        def set_sqlite_pragma_local(dbapi_connection, connection_record):
-            cursor = dbapi_connection.cursor()
+        logger.info("Initializing database registry entry for URL: %s", db_path_or_url)
+        
+        connect_args = {}
+        if db_path_or_url.startswith("sqlite"):
+            connect_args["check_same_thread"] = False
+
+        from sqlalchemy.pool import QueuePool
+        if db_path_or_url.startswith("sqlite"):
+            engine = create_engine(
+                db_path_or_url, 
+                connect_args=connect_args, 
+                poolclass=QueuePool,
+                pool_size=5,
+                max_overflow=10,
+                pool_timeout=30,
+                pool_recycle=1800
+            )
+        else:
+            engine = create_engine(
+                db_path_or_url, 
+                connect_args=connect_args, 
+                pool_pre_ping=True,
+                pool_size=10,
+                max_overflow=20,
+                pool_timeout=30,
+                pool_recycle=1800
+            )
+        
+        # Enable SQLite pragmas
+        if db_path_or_url.startswith("sqlite"):
+            # Explicit trigger on connection for test databases
+            @event.listens_for(engine, "connect")
+            def set_sqlite_pragma_local(dbapi_connection, connection_record):
+                cursor = dbapi_connection.cursor()
+                try:
+                    cursor.execute("PRAGMA foreign_keys=ON")
+                    cursor.execute("PRAGMA journal_mode=WAL")
+                    cursor.execute("PRAGMA synchronous=NORMAL")
+                    cursor.close()
+                except Exception:
+                    logger.warning("Failed to set SQLite pragmas on local connection")
+
+        Base.metadata.create_all(bind=engine)
+        if db_path_or_url.startswith("sqlite"):
             try:
-                cursor.execute("PRAGMA foreign_keys=ON")
-                cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.execute("PRAGMA synchronous=NORMAL")
-                cursor.close()
+                with engine.begin() as conn:
+                    conn.exec_driver_sql("PRAGMA user_version = 2")
             except Exception:
-                pass
-
-    Base.metadata.create_all(bind=engine)
-    if db_path_or_url.startswith("sqlite"):
-        try:
-            with engine.begin() as conn:
-                conn.exec_driver_sql("PRAGMA user_version = 2")
-        except Exception:
-            pass
-    
-    sm = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    _engines[db_path_or_url] = engine
-    _sessions[db_path_or_url] = sm
-    
-    return sm()
+                logger.warning("Failed to set PRAGMA user_version")
+        
+        sm = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        _engines[db_path_or_url] = engine
+        _sessions[db_path_or_url] = sm
+        
+        return sm()
 
 # ----------------- Declarative Models -----------------
 

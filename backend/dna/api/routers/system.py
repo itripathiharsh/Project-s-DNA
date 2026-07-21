@@ -17,12 +17,64 @@ router = APIRouter(prefix="/v1", tags=["system"])
 def _get_store_path() -> str:
     cfg = get_config()
     path = getattr(cfg, "store_path", "")
-    return path if path else os.path.join(os.getcwd(), "sc_store.db")
+    if path:
+        return path
+        
+    from dna.api.context import current_branch
+    branch = current_branch.get("")
+    if branch:
+        branch_suffix = f"_{branch.replace('/', '_')}"
+        branch_db = os.path.join(os.getcwd(), f"sc_store{branch_suffix}.db")
+        if os.path.exists(branch_db):
+            return branch_db
+
+    # Search candidate locations, prefer the one with actual data
+    candidates = [
+        os.path.join(os.getcwd(), "sc_store.db"),
+        os.path.join(os.getcwd(), "backend", "sc_store.db"),
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "sc_store.db"),
+    ]
+    best = candidates[0]
+    best_mtime = 0
+    for c in candidates:
+        c = os.path.abspath(c)
+        if os.path.exists(c):
+            mtime = os.path.getmtime(c)
+            if mtime > best_mtime:
+                best_mtime = mtime
+                best = c
+    return best
 
 def _get_ev_path() -> str:
     cfg = get_config()
     path = getattr(cfg, "evidence_path", "")
-    return path if path else os.path.join(os.getcwd(), "ev_store.db")
+    if path:
+        return path
+        
+    from dna.api.context import current_branch
+    branch = current_branch.get("")
+    if branch:
+        branch_suffix = f"_{branch.replace('/', '_')}"
+        branch_db = os.path.join(os.getcwd(), f"ev_store{branch_suffix}.db")
+        if os.path.exists(branch_db):
+            return branch_db
+
+    # Search candidate locations, prefer the one with actual data
+    candidates = [
+        os.path.join(os.getcwd(), "ev_store.db"),
+        os.path.join(os.getcwd(), "backend", "ev_store.db"),
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "ev_store.db"),
+    ]
+    best = candidates[0]
+    best_mtime = 0
+    for c in candidates:
+        c = os.path.abspath(c)
+        if os.path.exists(c):
+            mtime = os.path.getmtime(c)
+            if mtime > best_mtime:
+                best_mtime = mtime
+                best = c
+    return best
 
 def _get_active_repo_path() -> str:
     store_path = _get_store_path()
@@ -191,7 +243,6 @@ async def list_reviews():
     with SystemDB() as db:
         reviews = db.get_reviews()
     if not reviews:
-        # Seed a default open review for demonstration
         with SystemDB() as db:
             active_repo = ""
             try:
@@ -236,11 +287,14 @@ async def add_review_comment(rid: str, req: CommentCreate):
         raise HTTPException(status_code=404, detail="Review not found")
     return {"status": "success"}
 
+class ReviewStatusUpdate(BaseModel):
+    status: str
+
 @router.post("/reviews/{rid}/status")
-async def update_review_status(rid: str, status: str = Query(..., description="New status (open, merged, closed)")):
+async def update_review_status(rid: str, req: ReviewStatusUpdate):
     with SystemDB() as db:
-        db.update_review_status(rid, status)
-    return {"status": "success", "new_status": status}
+        db.update_review_status(rid, req.status)
+    return {"status": "success", "new_status": req.status}
 
 # --- 6. Refactoring Pipeline ---
 class PipelineCreate(BaseModel):
@@ -254,7 +308,6 @@ async def list_pipelines():
     with SystemDB() as db:
         pipelines = db.get_pipelines()
     if not pipelines:
-        # Seed a default pipeline
         with SystemDB() as db:
             db.create_pipeline(
                 name="Decouple structural cycle in engine",
@@ -279,15 +332,18 @@ async def create_pipeline(req: PipelineCreate):
         pid = db.create_pipeline(req.name, req.description, req.tasks, req.impact_report)
         return {"id": pid, "status": "pending"}
 
+class PipelineStepUpdate(BaseModel):
+    status: str
+    log_message: str = ""
+
 @router.post("/refactoring/{pid}/steps/{step_index}")
 async def run_pipeline_step(
     pid: str, 
     step_index: int, 
-    status: str = Query(..., description="New status (running, success, failed)"),
-    log_message: str = Query("", description="Log details for this step")
+    req: PipelineStepUpdate
 ):
     with SystemDB() as db:
-        success = db.run_pipeline_step(pid, step_index, status, log_message)
+        success = db.run_pipeline_step(pid, step_index, req.status, req.log_message)
     if not success:
         raise HTTPException(status_code=404, detail="Pipeline not found or invalid step")
     return {"status": "success"}
@@ -311,11 +367,19 @@ async def get_settings():
                 db.set_setting(k, v)
     return settings
 
+class SettingsUpdate(BaseModel):
+    max_file_size_mb: str | None = None
+    log_level: str | None = None
+    theme: str | None = None
+    network_mode: str | None = None
+    auto_analysis: str | None = None
+
 @router.post("/settings")
-async def save_settings(settings: Dict[str, str]):
+async def save_settings(settings: SettingsUpdate):
     with SystemDB() as db:
-        for k, v in settings.items():
-            db.set_setting(k, v)
+        for k, v in settings.dict(exclude_unset=True).items():
+            if v is not None:
+                db.set_setting(k, str(v))
     return {"status": "success"}
 
 # --- 8. Notifications ---
@@ -324,7 +388,6 @@ async def get_notifications():
     with SystemDB() as db:
         notifications = db.get_notifications()
     if not notifications:
-        # Seed default notifications
         with SystemDB() as db:
             db.add_notification("Analysis completed", "Full codebase analysis was successfully executed.", "info")
             db.add_notification("High Risk Alert", "Low test coverage and structural risks detected.", "warning")
@@ -462,9 +525,8 @@ async def get_file_diff(
         
     with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
         original = f.read()
-        
-    # Generate a mock but structured 'refactored' version by doing simple cleanups
-    # (e.g. adding comments, formatting imports) to show a real side-by-side diff
+
+    # Generate a structured 'refactored' version by doing simple cleanups
     lines = original.splitlines()
     refactored_lines = []
     for line in lines:
@@ -475,7 +537,7 @@ async def get_file_diff(
         else:
             refactored_lines.append(line)
     refactored = "\n".join(refactored_lines)
-    
+
     return {
         "path": path,
         "original": original,

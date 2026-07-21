@@ -1,6 +1,9 @@
 import json
+import logging
 from datetime import datetime, timezone
 from dna.models import Evidence
+
+logger = logging.getLogger("dna.reasoning.confidence")
 
 
 def calculate_confidence(category: str, matching_evidence: list[Evidence], all_evidence: list[Evidence] = None) -> float:
@@ -42,7 +45,7 @@ def calculate_confidence(category: str, matching_evidence: list[Evidence], all_e
             if age_days > max_age_days:
                 max_age_days = age_days
         except Exception:
-            pass
+            logger.debug("Failed to parse evidence timestamp: %s", getattr(ev, 'timestamp', '?'))
     if max_age_days > 30:
         confidence -= 0.10
     elif max_age_days > 7:
@@ -64,8 +67,7 @@ def calculate_confidence(category: str, matching_evidence: list[Evidence], all_e
                 elif changes > 10:
                     confidence += 0.05
             except Exception:
-                pass
-
+                logger.debug("Failed to parse change frequency evidence")
         # Increase confidence with higher complexity
         if cx_ev:
             try:
@@ -76,8 +78,7 @@ def calculate_confidence(category: str, matching_evidence: list[Evidence], all_e
                 elif comp > 5:
                     confidence += 0.05
             except Exception:
-                pass
-
+                logger.debug("Failed to parse complexity evidence for hotspot_risk")
         # CONFLICTING/MITIGATING EVIDENCE: High test coverage reduces hotspot risk confidence
         test_ev = next((e for e in all_evidence if e.type == "risk_metrics"), None)
         if test_ev:
@@ -89,8 +90,7 @@ def calculate_confidence(category: str, matching_evidence: list[Evidence], all_e
                 elif coverage > 0.5:
                     confidence -= 0.10
             except Exception:
-                pass
-
+                logger.debug("Failed to parse test coverage evidence")
     elif category == "bus_factor":
         ownership_ev = next((e for e in matching_evidence if e.type == "ownership_score"), None)
         if ownership_ev:
@@ -110,8 +110,7 @@ def calculate_confidence(category: str, matching_evidence: list[Evidence], all_e
                 elif len(contribs) <= 2:
                     confidence -= 0.10  # Low sample size reduces confidence in risk significance
             except Exception:
-                pass
-
+                logger.debug("Failed to parse ownership evidence for bus_factor")
     elif category == "test_debt":
         risk_ev = next((e for e in matching_evidence if e.type == "risk_metrics"), None)
         if risk_ev:
@@ -129,8 +128,7 @@ def calculate_confidence(category: str, matching_evidence: list[Evidence], all_e
                     if files < 5:
                         confidence -= 0.15
             except Exception:
-                pass
-
+                logger.debug("Failed to parse risk_metrics evidence for test_debt")
     elif category == "dependency_risk":
         risk_ev = next((e for e in matching_evidence if e.type == "risk_metrics"), None)
         if risk_ev:
@@ -142,8 +140,7 @@ def calculate_confidence(category: str, matching_evidence: list[Evidence], all_e
                 elif cycles == 0:
                     confidence -= 0.30  # No cycles means no risk
             except Exception:
-                pass
-
+                logger.debug("Failed to parse risk_metrics evidence for dependency_risk")
     elif category == "large_files":
         size_ev = next((e for e in matching_evidence if e.type == "size_metrics"), None)
         if size_ev:
@@ -155,7 +152,6 @@ def calculate_confidence(category: str, matching_evidence: list[Evidence], all_e
                 elif funcs > 50:
                     confidence += 0.05
             except Exception:
-                pass
-
+                logger.debug("Failed to parse size_metrics evidence for large_files")
     # Clamp confidence to [0.1, 1.0]
     return max(0.1, min(1.0, round(confidence, 2)))

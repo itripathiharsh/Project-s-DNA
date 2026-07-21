@@ -170,36 +170,48 @@ async def ask_repository_ai(req: AskRequest):
             with EvidenceStore(ev_path) as store:
                 evs = store.get_all()
                 for e in evs[:5]:
-                    context_summaries.append(f"- [Evidence {e.type}] in `{e.file_path}`: {e.value_json}")
+                    context_summaries.append(f"- [Evidence {e.type}] in `{e.file_path}`: {e.value}")
         except Exception:
-            pass
-
+            logger.debug("Failed to load evidence context for AI assistant")
     if not context_summaries:
         context_summaries = ["- No database evidence found. Scan the codebase using `/onboarding` to ground responses."]
 
     context_str = "\n".join(context_summaries)
     
-    # Simple simulated LLM response grounded strictly in codebase facts:
     prompt_lower = req.prompt.lower()
     if "risk" in prompt_lower or "bug" in prompt_lower:
         reply = (
             "### AI Codebase Risk Analysis\n\n"
-            f"Based on the analyzed repository, I found structural risks related to cyclomatic complexity and dependencies:\n\n"
-            f"{context_str}\n\n"
-            "**Key Findings:**\n"
-            "1. Complexity peaks in core database mapping modules. Refactoring loops into flat functions will enhance maintainability.\n"
-            "2. Low test coverage poses code drift risks."
+            "Based on the analyzed repository, here are the real structural risks found in the evidence:\n\n"
+            f"{context_str}\n"
         )
     elif "refactor" in prompt_lower or "improve" in prompt_lower:
-        reply = (
-            "### AI Refactoring Suggestions\n\n"
-            "Here is your customized refactoring roadmap based on structural coupling indices:\n\n"
-            "1. **Decouple Stores:** Refactor `SCStore` and `EvidenceStore` to extract database connection pooling out of classes.\n"
-            "2. **Implement Schemas:** Clean up raw dictionary returns in the API routes to use typed Pydantic models."
-        )
+        # Fetch real refactoring suggestions
+        try:
+            from dna.api.routers.refactoring_suite import _build_context, _class_splits, _dependency_breaks
+            ctx = _build_context()
+            splits = _class_splits(ctx).get("suggestions", [])
+            breaks = _dependency_breaks(ctx).get("cycles", [])
+            
+            reply = "### Real Refactoring Suggestions\n\n"
+            reply += "Here is your customized refactoring roadmap based on structural coupling indices:\n\n"
+            
+            if not splits and not breaks:
+                reply += "No major structural refactoring opportunities found.\n"
+            
+            idx = 1
+            for s in splits[:3]:
+                reply += f"{idx}. **Split `{s['file_path']}`:** {s['reason']}. Effort: {s['effort_hours']}h.\n"
+                idx += 1
+            for b in breaks[:2]:
+                reply += f"{idx}. **Break Dependency Cycle at `{b['entry_point']}`:** {b['action']}. Effort: {b['effort_hours']}h.\n"
+                idx += 1
+                
+        except Exception as e:
+            reply = f"### AI Refactoring Suggestions\n\nFailed to load real refactoring plans: {e}"
     else:
         reply = (
-            f"### AI Repository Assistant\n\n"
+            f"### Repository Assistant\n\n"
             f"You asked: *\"{req.prompt}\"*\n\n"
             f"Analyzing AST symbol graphs and mined commit history for answers. Current active context details:\n"
             f"{context_str}\n\n"
@@ -219,28 +231,44 @@ async def trigger_ai_agent_action(req: ActionRequest):
     action = req.action_type.lower()
     
     if action == "audit":
+        # Pull real code smells
+        try:
+            from dna.api.routers.advanced import get_code_smells
+            import asyncio
+            smells_data = asyncio.run(get_code_smells()) if asyncio.iscoroutinefunction(get_code_smells) else get_code_smells()
+            findings = [{"title": s["message"], "file": s["file"], "severity": s["severity"]} for s in smells_data.get("smells", [])[:5]]
+        except Exception:
+            findings = []
         return {
             "status": "success",
             "message": f"Completed One-click AI Audit on {target}",
-            "findings": [
-                {"title": "Unused Import cleanup", "file": "backend/dna/storage/store.py", "severity": "low"},
-                {"title": "SQLite Engine Release on error", "file": "backend/dna/storage/db.py", "severity": "medium"}
-            ]
+            "findings": findings
         }
     elif action == "security":
+        try:
+            from dna.api.routers.advanced import get_security_report
+            import asyncio
+            sec_data = asyncio.run(get_security_report()) if asyncio.iscoroutinefunction(get_security_report) else get_security_report()
+            findings = [{"title": s["description"], "file": s["file"], "severity": s["severity"]} for s in sec_data.get("findings", [])[:5]]
+        except Exception:
+            findings = []
         return {
             "status": "success",
             "message": f"Completed AI Security Review on {target}",
-            "findings": [
-                {"title": "Insecure config reading fallback", "file": "backend/dna/config.py", "severity": "medium"},
-                {"title": "Dangling SQLite handle leak", "file": "backend/dna/storage/store.py", "severity": "high"}
-            ]
+            "findings": findings
         }
     elif action == "refactor":
+        try:
+            from dna.api.routers.refactoring_suite import _build_context, _one_click_plan
+            ctx = _build_context()
+            plan = _one_click_plan(ctx, {"dead_code": {"dead_files": []}, "duplicate_removal": {"duplicate_functions": []}, "dependency_breaks": {"cycles": []}, "class_splits": {"suggestions": []}, "microservices": {"candidates": []}})
+            patch = "\n".join([f"- {a['action']} in {a['file']}" for a in plan.get("actions", [])])
+        except Exception:
+            patch = "No refactoring plan could be generated."
         return {
             "status": "success",
             "message": f"Generated refactoring changes plan for {target}",
-            "patch": "diff --git a/backend/dna/storage/db.py b/backend/dna/storage/db.py\n..."
+            "patch": patch
         }
     else:
         return {
@@ -286,44 +314,53 @@ async def get_github_metrics():
                     elif e.type == "tags_list":
                         tags = json.loads(e.value_json)
         except Exception:
-            pass
+            logger.debug("Failed to load evidence from store for github metrics")
+    # Real data calculation for heatmap and churn
+    heatmap_data = {d: {f"{h}:00": 0 for h in range(0, 24, 2)} for d in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]}
+    churn_data = {}
+    
+    for c in commits_data:
+        dt_str = c.get("authored_at") or c.get("committed_at")
+        if not dt_str:
+            continue
+        try:
+            dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+        except Exception:
+            continue
+            
+        # Heatmap
+        day = dt.strftime("%a")
+        hour_bucket = (dt.hour // 2) * 2
+        hour_str = f"{hour_bucket}:00"
+        if day in heatmap_data and hour_str in heatmap_data[day]:
+            heatmap_data[day][hour_str] += 1
+            
+        # Churn
+        date_str = dt.strftime("%m-%d")
+        if date_str not in churn_data:
+            churn_data[date_str] = {"added": 0, "deleted": 0}
+        churn_data[date_str]["added"] += c.get("insertions", 0)
+        churn_data[date_str]["deleted"] += c.get("deletions", 0)
 
-    # Provide synthetic git fallback if repository has no commits
-    if not contributors:
-        contributors = [
-            {"name": "Admin Operator", "commit_count": 28, "share": 0.70},
-            {"name": "Collaborator Alpha", "commit_count": 9, "share": 0.22},
-            {"name": "AI Agent Bot", "commit_count": 3, "share": 0.08}
-        ]
-
-    # Generate heatmaps
-    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     heatmap = []
-    for d in days:
-        for hour in range(0, 24, 2):
-            heatmap.append({
-                "day": d,
-                "hour": f"{hour}:00",
-                "commits": random.randint(0, 8) if d not in ("Sat", "Sun") else random.randint(0, 2)
-            })
+    for d, hours in heatmap_data.items():
+        for h, count in hours.items():
+            heatmap.append({"day": d, "hour": h, "commits": count})
+            
+    # Sort churn timeline by date
+    churn_timeline = [{"date": k, "added": v["added"], "deleted": v["deleted"]} for k, v in sorted(churn_data.items())[-12:]]
 
-    # Churn timeline
-    churn_timeline = []
-    for i in range(12, 0, -1):
-        date_str = (datetime.now() - timedelta(days=i*2)).strftime("%m-%d")
-        churn_timeline.append({
-            "date": date_str,
-            "added": random.randint(100, 1500),
-            "deleted": random.randint(20, 900)
-        })
+    total_commits = len(commits_data)
+    velocity_score = min(100, total_commits * 5) if total_commits > 0 else None
+    engineering_velocity = "optimal" if velocity_score and velocity_score > 60 else ("moderate" if velocity_score else "no_evidence")
 
     return {
         "bus_factor": bus_factor,
         "contributors": contributors,
         "commit_activity_heatmap": heatmap,
         "code_churn_timeline": churn_timeline,
-        "engineering_velocity": "optimal",
-        "velocity_score": 88,
+        "engineering_velocity": engineering_velocity if total_commits > 0 else "no_evidence",
+        "velocity_score": velocity_score if velocity_score is not None else "no_evidence",
         "hotspots": hotspots,
         "pr_stats": pr_stats,
         "issue_stats": issue_stats,
@@ -361,29 +398,20 @@ async def get_code_smells():
                             "remediation": "Decompose the module functions into smaller helper files."
                         })
                         
-                # Simulated Dead Code, Unused Imports detection based on structural properties
-                for fe in files[:2]:
-                    smells.append({
-                        "type": "unused_import",
-                        "message": f"Unused import `typing.Any` detected in `{fe.file_path}`.",
-                        "file": fe.file_path,
-                        "severity": "low",
-                        "confidence": 0.85,
-                        "remediation": "Remove unused import line from source code."
-                    })
+                # Find functions with high complexity
+                for f in funcs:
+                    comp = int(f.properties.get("complexity", 1))
+                    if comp > 10:
+                        smells.append({
+                            "type": "complexity_warning",
+                            "message": f"Function `{f.name}` cyclomatic complexity is high ({comp}).",
+                            "file": f.file_path,
+                            "severity": "medium",
+                            "confidence": 0.95,
+                            "remediation": "Extract inner logic into standalone helper functions."
+                        })
         except Exception:
-            pass
-
-    if not smells:
-        smells.append({
-            "type": "complexity_warning",
-            "message": "Function `run_full_analysis` cyclomatic complexity is high (14).",
-            "file": "backend/dna/api/analysis.py",
-            "severity": "medium",
-            "confidence": 0.95,
-            "remediation": "Extract inner try-except blocks into standalone helper functions."
-        })
-
+            logger.debug("Failed to load SCStore for code smells analysis")
     return {
         "smells": smells,
         "total_smells": len(smells)
@@ -412,48 +440,39 @@ async def get_security_report():
                             "recommendation": "Use environment variables or secrets manager."
                         })
         except Exception:
-            pass
-
-    if not findings:
-        findings.append({
-            "type": "unsafe_api",
-            "description": "Found standard SQLite initialization without SQL Injection validation on metadata values.",
-            "file": "backend/dna/storage/store.py",
-            "line": 40,
-            "severity": "medium",
-            "recommendation": "Enforce strict schema parameters or bind variables in all PRAGMA SQL statements."
-        })
-
+            logger.debug("Failed to load SCStore for security report")
     return {
-        "security_score": 85,
+        "security_score": max(0, 100 - len(findings) * 5),
         "findings": findings,
-        "vulnerabilities": [
-            {"package": "fastapi", "version": "0.109.0", "vulnerability": "Denial of Service risk", "severity": "medium"}
-        ]
+        "vulnerabilities": []
     }
 
 # --- 7. PERFORMANCE CENTER ---
 @router.get("/performance/hotpaths")
 async def get_performance_hotpaths():
-    # Performance hotspot analysis, rendering budget, bundle weight
+    ev_path = _get_ev_path()
+    hotpaths = []
+    
+    if os.path.exists(ev_path):
+        try:
+            with EvidenceStore(ev_path) as store:
+                evs = store.get_all()
+                for e in evs:
+                    if e.type == "hotspot_list":
+                        data = json.loads(e.value_json).get("hotspots", [])
+                        for h in data:
+                            hotpaths.append({
+                                "file": h.get("file"),
+                                "description": f"High change frequency ({h.get('change_count')} changes)",
+                                "severity": "medium" if h.get("change_count", 0) < 10 else "high",
+                                "impact": "Potential performance or architectural bottleneck.",
+                                "suggestion": "Consider profiling and refactoring this hot file."
+                            })
+        except Exception:
+            logger.debug("Failed to load evidence for performance hotpaths")
     return {
-        "performance_score": 90,
-        "bundle_weight_kb": 444.6,
-        "render_cost_ms": 10.57,
-        "hotpaths": [
-            {
-                "file": "frontend/src/pages/GraphWorkspace.jsx",
-                "description": "Frequent canvas/SVG re-renders on drag-pan actions.",
-                "severity": "medium",
-                "impact": "Can lag on large graph nodes (500+ entities)",
-                "suggestion": "Debounce mousemove updates or convert to GPU Canvas rendering (WebGL)."
-            },
-            {
-                "file": "backend/dna/parser/traverser.py",
-                "description": "AST traversal loops running sequentially on large projects.",
-                "severity": "low",
-                "impact": "Slightly slow analysis onboarding startup times",
-                "suggestion": "Distribute tree parsing workloads using the `parser_max_workers` ThreadPool."
-            }
-        ]
+        "performance_score": max(0, 100 - len(hotpaths) * 2),
+        "bundle_weight_kb": 0,
+        "render_cost_ms": 0,
+        "hotpaths": hotpaths
     }

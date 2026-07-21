@@ -43,7 +43,9 @@ def parse_repository(
     parsed: list[ParsedFile] = []
 
     if source_files:
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        from dna.threadpool import get_executor
+        executor = get_executor()
+        if True:
             future_map = {}
             for f in source_files:
                 future = executor.submit(_safe_parse, f.path, f.language)

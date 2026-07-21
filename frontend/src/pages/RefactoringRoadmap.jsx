@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { getPipelines, createPipeline } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 
 export default function RefactoringRoadmap() {
   const [pipelines, setPipelines] = useState([]);
@@ -12,6 +13,7 @@ export default function RefactoringRoadmap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { toast } = useNotification();
 
   useEffect(() => {
     async function loadPipelines() {
@@ -61,9 +63,10 @@ export default function RefactoringRoadmap() {
       setName('');
       setDescription('');
       setTasksStr('');
+      toast('Pipeline created successfully', 'success');
       navigate(`/refactoring/pipeline?id=${res.id}`);
     } catch (err) {
-      alert('Failed to create pipeline: ' + err.message);
+      toast('Failed to create pipeline: ' + err.message, 'error');
     }
   };
 

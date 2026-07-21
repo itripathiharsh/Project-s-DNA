@@ -101,6 +101,7 @@ export default function RepositoryExplorer() {
       setSymbols(symbolData.symbols || []);
     } catch (err) {
       console.error('Error loading file details:', err);
+      setError('Failed to load file: ' + (err.message || 'Unknown error'));
     } finally {
       setFileLoading(false);
     }

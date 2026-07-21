@@ -7,6 +7,7 @@ import stat
 import shutil
 from pathlib import Path
 from dna.config import get_config
+from dna.security.path_validation import validate_branch_name, sanitize_repo_dir_name, safe_validate_path
 
 logger = logging.getLogger("dna.remote")
 
@@ -50,10 +51,10 @@ class DirLock:
                         try:
                             os.rmdir(self.lock_path)
                         except Exception:
-                            pass
+                            logger.debug("Failed to remove stale lock: %s", self.lock_path)
                         continue
                 except Exception:
-                    pass
+                    logger.debug("Failed to check lock mtime: %s", self.lock_path)
 
                 if time.time() - start_time > self.timeout:
                     raise TimeoutError(f"Could not acquire lock on {self.lock_path} within {self.timeout}s")
@@ -64,7 +65,7 @@ class DirLock:
             try:
                 os.rmdir(self.lock_path)
             except Exception:
-                pass
+                logger.debug("Failed to release lock: %s", self.lock_path)
             self.acquired = False
 
     def __enter__(self):
@@ -120,7 +121,7 @@ def cleanup_cache(cache_dir: str, ttl_days: int):
         except Exception as e:
             logger.error(f"Error during cleanup of {repo_path}: {e}")
 
-def get_local_repo_from_github(url: str) -> str:
+def get_local_repo_from_github(url: str, target_branch: str = None) -> str:
     cfg = get_config()
     if not cfg.enable_remote_repos:
         raise ValueError("Remote GitHub repository analysis is disabled in configuration")
@@ -135,7 +136,10 @@ def get_local_repo_from_github(url: str) -> str:
     # Run cache cleanup before processing
     cleanup_cache(cache_dir, cfg.repo_cache_ttl_days)
 
-    repo_dir_name = f"{owner}_{repo}"
+    repo_dir_name = sanitize_repo_dir_name(f"{owner}_{repo}")
+    if target_branch:
+        target_branch = validate_branch_name(target_branch)
+        repo_dir_name += f"_{sanitize_repo_dir_name(target_branch)}"
     local_path = os.path.join(cache_dir, repo_dir_name)
     lock_path = os.path.join(cache_dir, f"{repo_dir_name}.lock")
 
@@ -148,9 +152,12 @@ def get_local_repo_from_github(url: str) -> str:
             logger.info(f"Cloning {url} into {local_path}...")
             env = os.environ.copy()
             env["GIT_TERMINAL_PROMPT"] = "0"
+            clone_cmd = ["git", "clone", "--depth", "1", url, local_path]
+            if target_branch:
+                clone_cmd = ["git", "clone", "--depth", "1", "--branch", target_branch, url, local_path]
             try:
                 subprocess.run(
-                    ["git", "clone", "--depth", "1", url, local_path],
+                    clone_cmd,
                     env=env,
                     capture_output=True,
                     text=True,
@@ -241,6 +248,11 @@ def get_local_repo_from_github(url: str) -> str:
             last_used_file = os.path.join(local_path, ".last_used")
             Path(last_used_file).touch()
         except Exception:
-            pass
+            logger.warning("Failed to update last used timestamp for %s", local_path)
 
+    # SECURITY: Canonicalize the returned local path
+    try:
+        local_path = safe_validate_path(local_path, cache_dir)
+    except ValueError:
+        raise RuntimeError(f"Repository path validation failed: {local_path}")
     return local_path

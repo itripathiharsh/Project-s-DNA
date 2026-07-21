@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { getReview, addReviewComment, updateReviewStatus } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 
 export default function ActiveReview() {
   const [searchParams] = useSearchParams();
@@ -12,6 +13,7 @@ export default function ActiveReview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { toast } = useNotification();
 
   useEffect(() => {
     if (!rid) {
@@ -44,8 +46,9 @@ export default function ActiveReview() {
       setCommentText('');
       const updated = await getReview(rid);
       setReview(updated);
+      toast('Comment posted successfully', 'success');
     } catch (err) {
-      alert('Failed to post comment: ' + err.message);
+      toast('Failed to post comment: ' + err.message, 'error');
     }
   };
 
@@ -54,8 +57,9 @@ export default function ActiveReview() {
       await updateReviewStatus(rid, status);
       const updated = await getReview(rid);
       setReview(updated);
+      toast('Status changed to ' + status, 'success');
     } catch (err) {
-      alert('Failed to change status: ' + err.message);
+      toast('Failed to change status: ' + err.message, 'error');
     }
   };
 

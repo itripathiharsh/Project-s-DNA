@@ -22,9 +22,24 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/analyze': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/openapi.json': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei', 'react-force-graph-3d'],
+          'vendor-motion': ['framer-motion', 'gsap'],
+        },
       },
     },
   },

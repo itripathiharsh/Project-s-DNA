@@ -56,6 +56,7 @@ def analyze_knowledge(
                 from dna.git_history.blame import get_files_blame
                 blame_map = get_files_blame(repo_path, [fe.file_path for fe in file_entities])
             except Exception:
+                logger.debug("Failed to load blame data for knowledge engine")
                 blame_map = {}
 
         ownership_scores = {}

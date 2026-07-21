@@ -21,9 +21,11 @@ export default function DocumentationHub() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [docCache, setDocCache] = useState({}); // New cache state
+  const [docCache, setDocCache] = useState({});
+  const [renderError, setRenderError] = useState(null);
   
   const mermaidRef = useRef(null);
+  const blobUrlRef = useRef(null);
 
   useEffect(() => {
     // Load Mermaid.js from CDN to render diagrams dynamically
@@ -95,12 +97,18 @@ export default function DocumentationHub() {
         // If the user cancelled the dialog, just return
         if (err.name === 'AbortError') return;
         console.error('Save file picker failed:', err);
+        // Notify user of error
+        if (typeof toast === 'function') {
+          toast('Failed to save file. Use the copy button instead.', 'error');
+        }
       }
     }
 
     // 2. Fallback approach for browsers without showSaveFilePicker (e.g., Firefox)
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
     const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
     const blobUrl = URL.createObjectURL(blob);
+    blobUrlRef.current = blobUrl;
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = blobUrl;
@@ -110,6 +118,7 @@ export default function DocumentationHub() {
     setTimeout(() => {
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
+      if (blobUrlRef.current === blobUrl) blobUrlRef.current = null;
     }, 10000);
   };
 
@@ -143,9 +152,12 @@ export default function DocumentationHub() {
             if (isMounted && mermaidRef.current) {
                mermaidRef.current.innerHTML = `<div class="text-red-400 font-mono text-sm p-4 bg-red-950/30 rounded border border-red-500/30">Failed to render diagram. The AI generated invalid Mermaid syntax.</div>`;
             }
+            // Set error state so user sees feedback
+            setRenderError && setRenderError('Mermaid rendering failed: ' + (e.message || 'Unknown error'));
           });
         } catch (e) {
           console.error("Mermaid error:", e);
+          setRenderError && setRenderError('Failed to process Mermaid diagram: ' + (e.message || 'Unknown error'));
         }
       }
     }

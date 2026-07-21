@@ -12,8 +12,33 @@ from dna.evidence.store import EvidenceStore
 
 logger = logging.getLogger("dna.api")
 
-def run_full_analysis(repo_path: str, progress_callback: Callable[[str, str, int, str], None] = None) -> dict:
-    configure_logging(level=get_config().log_level)
+def run_full_analysis(repo_path: str, branch: str = None, progress_callback: Callable[[str, str, int, str], None] = None) -> dict:
+    import gc
+    from dna.storage.db import clear_db_registry
+    from dna.config import reset_config
+    # Ensure all stale engines and configuration are reset before starting a fresh analysis
+    clear_db_registry()
+    reset_config()
+    gc.collect()
+    
+    cfg = get_config()
+    # Stale cache from a previous run can poison incremental analysis (files from a different repo).
+    # Wipe it so every analysis starts fresh.
+    for _p in (cfg.store_path, cfg.evidence_path):
+        if _p and os.path.exists(_p):
+            try:
+                os.remove(_p)
+            except OSError as e:
+                logger.debug("Failed to remove stale cache file %s: %s", _p, e)
+            for _ext in ('-wal', '-shm'):
+                _wal = _p + _ext
+                if os.path.exists(_wal):
+                    try:
+                        os.remove(_wal)
+                    except OSError:
+                        logger.debug("Failed to remove stale WAL/SHM %s", _wal)
+
+    configure_logging(level=cfg.log_level)
     logger.info("Starting declarative DAG codebase analysis for: %s", repo_path)
 
     # Set up temporary storage directories
@@ -25,6 +50,15 @@ def run_full_analysis(repo_path: str, progress_callback: Callable[[str, str, int
         # Create pipeline context
         context = PipelineContext(repo_path, store_path, ev_path)
 
+        # Pre-initialize databases to avoid concurrent table creation race conditions
+        try:
+            with SCStore(store_path) as store:
+                pass
+            with EvidenceStore(ev_path) as ev_store:
+                pass
+        except Exception as e:
+            logger.warning("Failed to pre-initialize databases: %s", e)
+
         # Instantiate declarative DAG
         dag = PipelineDAG()
 
@@ -35,7 +69,7 @@ def run_full_analysis(repo_path: str, progress_callback: Callable[[str, str, int
             # When the entities step succeeds, merge it with the existing database graph
             if step_id == "entities" and status == "success":
                 try:
-                    _perform_incremental_merge(context)
+                    _perform_incremental_merge(context, branch)
                 except Exception as e:
                     logger.error("Failed to perform incremental merge: %s", e)
             
@@ -50,10 +84,16 @@ def run_full_analysis(repo_path: str, progress_callback: Callable[[str, str, int
             first_err = next(iter(context.errors.values())) if context.errors else "Unknown pipeline error"
             raise RuntimeError(f"Analysis pipeline execution failed: {first_err}")
 
+        # Dispose all engines to release temp file locks before copying/deletion
+        clear_db_registry()
+        gc.collect()
+
         # Post-process: persist stores
         cfg = get_config()
-        dest_store_path = cfg.store_path or os.path.join(os.getcwd(), "sc_store.db")
-        dest_ev_path = cfg.evidence_path or os.path.join(os.getcwd(), "ev_store.db")
+        branch_suffix = f"_{branch.replace('/', '_')}" if branch else ""
+        
+        dest_store_path = getattr(cfg, "store_path", "") or os.path.join(os.getcwd(), f"sc_store{branch_suffix}.db")
+        dest_ev_path = getattr(cfg, "evidence_path", "") or os.path.join(os.getcwd(), f"ev_store{branch_suffix}.db")
 
         os.makedirs(os.path.dirname(os.path.abspath(dest_store_path)), exist_ok=True)
         os.makedirs(os.path.dirname(os.path.abspath(dest_ev_path)), exist_ok=True)
@@ -61,6 +101,14 @@ def run_full_analysis(repo_path: str, progress_callback: Callable[[str, str, int
         # Copy the temporary databases back to the configured production database paths
         shutil.copy2(store_path, dest_store_path)
         shutil.copy2(ev_path, dest_ev_path)
+        
+        # Also ALWAYS overwrite the default databases so that when branch context is lost, 
+        # the fallback data is always the absolute latest scanned repository
+        default_store_path = getattr(cfg, "store_path", "") or os.path.join(os.getcwd(), "sc_store.db")
+        default_ev_path = getattr(cfg, "evidence_path", "") or os.path.join(os.getcwd(), "ev_store.db")
+        if dest_store_path != default_store_path:
+            shutil.copy2(store_path, default_store_path)
+            shutil.copy2(ev_path, default_ev_path)
 
         # Collect results
         evolution = context.data.get("evolution_engine", {})
@@ -108,15 +156,21 @@ def run_full_analysis(repo_path: str, progress_callback: Callable[[str, str, int
 
         # Save to latest_analysis.json
         try:
-            latest_path = os.path.join(os.getcwd(), "latest_analysis.json")
+            latest_path = os.path.join(os.getcwd(), f"latest_analysis{branch_suffix}.json")
             with open(latest_path, "w", encoding="utf-8") as f:
                 json.dump(res_dict, f, indent=2)
+            
+            # ALWAYS overwrite the default as well
+            default_latest = os.path.join(os.getcwd(), "latest_analysis.json")
+            if latest_path != default_latest:
+                with open(default_latest, "w", encoding="utf-8") as f:
+                    json.dump(res_dict, f, indent=2)
         except Exception as e:
             logger.error("Failed to write latest_analysis.json: %s", e)
 
         return res_dict
 
-def _perform_incremental_merge(context: PipelineContext):
+def _perform_incremental_merge(context: PipelineContext, branch: str = None):
     """Merges the newly parsed delta entity graph with the existing full entity graph."""
     inventory = context.data.get("indexer")
     delta_graph = context.data.get("entities")
@@ -128,14 +182,19 @@ def _perform_incremental_merge(context: PipelineContext):
     changed_files = {f.relative_path for f in inventory.files if getattr(f, "change_type", "modified") in ("added", "modified", "removed")}
     
     cfg = get_config()
-    dest_store_path = cfg.store_path or os.path.join(os.getcwd(), "sc_store.db")
+    branch_suffix = f"_{branch.replace('/', '_')}" if branch else ""
+    dest_store_path = getattr(cfg, "store_path", "") or os.path.join(os.getcwd(), f"sc_store{branch_suffix}.db")
     
     previous_graph = None
     if os.path.exists(dest_store_path):
         try:
             with SCStore(dest_store_path) as old_store:
-                previous_graph = old_store.load_entity_graph()
-                logger.info("Loaded previous entity graph of %d entities for merging", len(previous_graph.entities))
+                old_repo = old_store.get_metadata("repo_path")
+                if old_repo != context.repo_path:
+                    logger.info("Existing database belongs to a different repository. Skipping incremental merge.")
+                else:
+                    previous_graph = old_store.load_entity_graph()
+                    logger.info("Loaded previous entity graph of %d entities for merging", len(previous_graph.entities))
         except Exception as ex:
             logger.warning("Could not load previous entity graph for merging: %s", ex)
             

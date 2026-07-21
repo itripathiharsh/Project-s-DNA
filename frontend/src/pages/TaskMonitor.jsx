@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import { getNotifications, readNotification, readAllNotifications, deleteNotification } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 
 export default function TaskMonitor() {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('all'); // all, unread
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { toast } = useNotification();
 
   const loadNotifications = async () => {
     try {
@@ -28,7 +30,7 @@ export default function TaskMonitor() {
       await readNotification(nid);
       await loadNotifications();
     } catch (err) {
-      alert('Failed to mark read: ' + err.message);
+      toast('Failed to mark read: ' + err.message, 'error');
     }
   };
 
@@ -37,7 +39,7 @@ export default function TaskMonitor() {
       await readAllNotifications();
       await loadNotifications();
     } catch (err) {
-      alert('Failed to mark all read: ' + err.message);
+      toast('Failed to mark all read: ' + err.message, 'error');
     }
   };
 
@@ -46,7 +48,7 @@ export default function TaskMonitor() {
       await deleteNotification(nid);
       await loadNotifications();
     } catch (err) {
-      alert('Failed to dismiss alert: ' + err.message);
+      toast('Failed to dismiss alert: ' + err.message, 'error');
     }
   };
 

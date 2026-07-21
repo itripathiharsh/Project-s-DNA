@@ -7,9 +7,16 @@ from dna.git_history.commit_parser import parse_commit_log
 from dna.git_history.branch_detector import detect_branches
 from dna.git_history.tag_mapper import map_tags
 from dna.git_history.author_analyzer import analyze_authors
+from dna.config import get_config
 
 
 def mine_git_history(path: str) -> CommitHistory:
+    # SECURITY: Canonicalize path to resolve any .. components
+    from dna.security.path_validation import safe_validate_path
+    try:
+        path = safe_validate_path(path)
+    except ValueError:
+        raise PathNotFoundError(path)
     if not os.path.exists(path):
         raise PathNotFoundError(path)
     if not os.path.isdir(path):

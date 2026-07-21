@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { readAllNotifications } from '../services/api';
 import { useAnalysis } from '../store/analysis';
+import { useNotification } from '../components/NotificationContext';
 
 export default function CommandPalette() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function CommandPalette() {
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
+  const { toast } = useNotification();
 
   const COMMANDS = [
     { name: 'Navigate: Go to Dashboard', description: 'Open main dashboard overview', icon: 'dashboard', action: () => navigate('/dashboard') },
@@ -27,9 +29,9 @@ export default function CommandPalette() {
     { name: 'Action: Clear All Notifications', description: 'Mark all background alerts as read', icon: 'notifications_off', action: async () => {
         try {
           await readAllNotifications();
-          alert('All notifications marked as read.');
+          toast('All notifications marked as read.', 'success');
         } catch (err) {
-          alert('Failed to clear notifications: ' + err.message);
+          toast('Failed to clear notifications: ' + err.message, 'error');
         }
     }},
     { name: 'Action: Open Layout Orchestration', description: 'Manage window layout settings', icon: 'grid_view', action: () => navigate('/orchestration') },

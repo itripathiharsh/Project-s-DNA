@@ -3,6 +3,7 @@ import logging
 from dna.models import FileInfo
 from dna.discovery.languages import detect_language, is_source_file
 from dna.discovery.ignore import IgnoreFilter
+from dna.security.path_validation import safe_validate_path
 
 logger = logging.getLogger("dna.discovery")
 
@@ -11,11 +12,18 @@ def scan_files(
     path: str,
     ignore_patterns: list[str] | None = None,
 ) -> list[FileInfo]:
-    if not os.path.isdir(path):
-        return []
-
     from dna.config import get_config
     config = get_config()
+
+    # SECURITY: Canonicalize path to resolve any .. components
+    try:
+        path = safe_validate_path(path)
+    except ValueError:
+        logger.warning("Path validation failed in scan_files: %s", path)
+        return []
+
+    if not os.path.isdir(path):
+        return []
 
     all_patterns = list(config.always_ignore)
     if ignore_patterns:

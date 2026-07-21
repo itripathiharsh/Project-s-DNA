@@ -1,8 +1,10 @@
 from dna.models import Branch, Commit
 from dna.git_history.commit_parser import _run_git
+from dna.security.path_validation import safe_validate_path
 
 
 def detect_branches(path: str) -> list[Branch]:
+    path = safe_validate_path(path)
     out = _run_git(["git", "branch", "-a"], path)
     branches: list[Branch] = []
     head_name = _run_git(["git", "branch", "--show-current"], path).strip()

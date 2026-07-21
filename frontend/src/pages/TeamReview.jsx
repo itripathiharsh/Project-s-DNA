@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import { getReviews, createReview } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 
 export default function TeamReview() {
   const [reviews, setReviews] = useState([]);
@@ -14,6 +15,7 @@ export default function TeamReview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { toast } = useNotification();
 
   useEffect(() => {
     async function loadReviews() {
@@ -48,9 +50,10 @@ export default function TeamReview() {
       setFiles('');
       const updated = await getReviews();
       setReviews(updated.reviews || []);
+      toast('Review created successfully', 'success');
       navigate(`/reviews/active?id=${res.id}`);
     } catch (err) {
-      alert('Failed to create review: ' + err.message);
+      toast('Failed to create review: ' + err.message, 'error');
     }
   };
 

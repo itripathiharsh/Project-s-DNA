@@ -43,12 +43,18 @@ def parse_commit_log(path: str) -> list[Commit]:
         "--numstat",
     ]
     proc = _run_git_stream(cmd, path)
-    commits = _stream_parse(proc)
-    stderr = proc.stderr.read() if proc.stderr else ""
-    ret = proc.wait()
-    if ret != 0:
-        raise GitCommandError(" ".join(cmd), ret, stderr)
-    return commits
+    try:
+        commits = _stream_parse(proc)
+        stderr = proc.stderr.read() if proc.stderr else ""
+        ret = proc.wait()
+        if ret != 0:
+            raise GitCommandError(" ".join(cmd), ret, stderr)
+        return commits
+    except:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait()
+        raise
 
 
 def _stream_parse(proc) -> list[Commit]:

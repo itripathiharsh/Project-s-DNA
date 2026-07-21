@@ -153,10 +153,6 @@ def validate_repo_path(path: str) -> str:
     if not os.path.isdir(resolved_path):
         raise ValueError(f"Repository path is not a directory: {resolved_path}")
         
-    # Must be a git repository to prevent arbitrary directory reading
-    if not os.path.isdir(os.path.join(resolved_path, ".git")):
-        raise ValueError(f"Path is not a valid git repository: {resolved_path}")
-        
     # Check accessible
     if not os.access(resolved_path, os.R_OK):
         raise ValueError(f"Repository path is not accessible: {resolved_path}")

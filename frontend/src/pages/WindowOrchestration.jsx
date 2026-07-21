@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import { getSettings, saveSettings } from '../services/api';
+import { useNotification } from '../components/NotificationContext';
 
 export default function WindowOrchestration() {
   const [layout, setLayout] = useState('split');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { toast } = useNotification();
 
   useEffect(() => {
     async function loadLayout() {
@@ -29,9 +31,9 @@ export default function WindowOrchestration() {
       await saveSettings({
         layout_grid_orchestration: selectedLayout
       });
-      alert(`Workspace layout '${selectedLayout}' successfully saved to database configuration.`);
+      toast(`Workspace layout '${selectedLayout}' successfully saved to database configuration.`, 'success');
     } catch (err) {
-      alert('Failed to save layout: ' + err.message);
+      toast('Failed to save layout: ' + err.message, 'error');
     }
   };
 

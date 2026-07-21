@@ -1,7 +1,10 @@
 import json
+import logging
 from typing import Optional
 from dna.models import EntityGraph, Entity, EntityRelation
 from dna.storage.db import get_db_session, EntityModel, RelationModel, SettingModel
+
+logger = logging.getLogger("dna.storage.store")
 
 _SCHEMA_SQL_V1 = """
 CREATE TABLE IF NOT EXISTS entities (
@@ -31,11 +34,12 @@ class SCStore:
     @property
     def _conn(self):
         import sqlite3
-        conn = sqlite3.connect(self.db_path or "dna_production.db")
         if not hasattr(self, "_legacy_conns"):
             self._legacy_conns = []
-        self._legacy_conns.append(conn)
-        return conn
+        if not self._legacy_conns:
+            conn = sqlite3.connect(self.db_path or "dna_production.db")
+            self._legacy_conns.append(conn)
+        return self._legacy_conns[0]
 
     def open(self) -> None:
         import os
@@ -43,16 +47,18 @@ class SCStore:
             try:
                 import sqlite3
                 conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
-                cursor.execute("PRAGMA table_info(entities)")
-                cols = [c[1] for c in cursor.fetchall()]
-                if cols and "hash" not in cols:
-                    cursor.execute("ALTER TABLE entities ADD COLUMN hash TEXT DEFAULT ''")
-                    cursor.execute("PRAGMA user_version = 2")
-                    conn.commit()
-                conn.close()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute("PRAGMA table_info(entities)")
+                    cols = [c[1] for c in cursor.fetchall()]
+                    if cols and "hash" not in cols:
+                        cursor.execute("ALTER TABLE entities ADD COLUMN hash TEXT DEFAULT ''")
+                        cursor.execute("PRAGMA user_version = 2")
+                        conn.commit()
+                finally:
+                    conn.close()
             except Exception:
-                pass
+                logger.warning("Failed to migrate SCStore schema (ALTER TABLE)")
         self._session = get_db_session(self.db_path)
 
     def close(self) -> None:
@@ -61,7 +67,7 @@ class SCStore:
                 try:
                     conn.close()
                 except Exception:
-                    pass
+                    logger.warning("Failed to close legacy SQLite connection in SCStore")
             self._legacy_conns.clear()
         if self._session:
             self._session.close()
@@ -76,7 +82,7 @@ class SCStore:
                 try:
                     _engines[db_path_or_url].dispose()
                 except Exception:
-                    pass
+                    logger.warning("Failed to dispose SCStore engine for %s", db_path_or_url)
                 del _engines[db_path_or_url]
             if db_path_or_url in _sessions:
                 del _sessions[db_path_or_url]

@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnalysis } from '../../store/analysis';
+import { useNotification } from '../../components/NotificationContext';
 
-const STEPS = ['Connect', 'Configure', 'Analyze', 'Finalize'];
+const STEPS = ['Connect', 'Select Branches', 'Analyze', 'Finalize'];
 
 export default function SelectRepository() {
   const [path, setPath] = useState('');
   const [viaUrl, setViaUrl] = useState(false);
+  const [loadingInfo, setLoadingInfo] = useState(false);
   const navigate = useNavigate();
-  const { setRepoPath, data, loading, loadLatest } = useAnalysis();
+  const { setRepoPath, setRepoInfo, data, loading, loadLatest } = useAnalysis();
+  const { toast } = useNotification();
 
   useEffect(() => {
     if (!loading && data && localStorage.getItem('skip_onboarding') === 'true') {
@@ -25,11 +28,27 @@ export default function SelectRepository() {
     );
   }
 
-  function next(e) {
+  async function next(e) {
     e.preventDefault();
     if (!path.trim()) return;
-    setRepoPath(path.trim());
-    navigate('/onboarding/configure');
+    setLoadingInfo(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const res = await fetch(`${apiBase}/v1/intake/info`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url_or_path: path.trim() })
+      });
+      if (!res.ok) throw new Error('Failed to fetch repository information');
+      const info = await res.json();
+      setRepoPath(path.trim());
+      setRepoInfo(info);
+      navigate('/onboarding/configure');
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      setLoadingInfo(false);
+    }
   }
 
   return (
@@ -44,11 +63,6 @@ export default function SelectRepository() {
             <span className="text-primary font-bold">Onboarding</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container p-1 transition-colors">notifications</span>
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container p-1 transition-colors">help</span>
-          <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container p-1 transition-colors">settings</span>
-        </div>
       </header>
 
       <main className="flex-1 flex flex-col min-w-0">
@@ -61,7 +75,7 @@ export default function SelectRepository() {
               </div>
               <button onClick={() => setViaUrl((v) => !v)} className="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 font-body-sm font-bold flex items-center gap-2 transition-all">
                 <span className="material-symbols-outlined">link</span>
-                Import from URL
+                {viaUrl ? 'Use Local Path' : 'Import from URL'}
               </button>
             </div>
             <div className="flex items-center gap-4 w-full">
@@ -87,10 +101,10 @@ export default function SelectRepository() {
             <div className="bg-surface-container-low border border-border-subtle p-6 rounded-lg">
               <h2 className="font-headline-md text-headline-md mb-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">folder_open</span>
-                Repository path
+                Repository Path or URL
               </h2>
               <p className="text-on-surface-variant font-body-sm mb-4">
-                Enter the absolute path to a local repository on the server. Project DNA will analyze it from there.
+                Enter the absolute path to a local repository or a GitHub HTTPS URL.
               </p>
               <form onSubmit={next} className="flex flex-col gap-4">
                 <div className="relative">
@@ -100,32 +114,11 @@ export default function SelectRepository() {
                     type="text"
                     value={path}
                     onChange={(e) => setPath(e.target.value)}
-                    placeholder={viaUrl ? 'https://github.com/org/repo.git' : 'C:\\projects\\my-repo'}
+                    placeholder={viaUrl ? 'https://github.com/owner/repo' : 'C:\\projects\\my-repo'}
                     className="w-full bg-surface-container-lowest border border-border-subtle pl-10 pr-4 h-row-height-standard text-on-surface font-code-md focus:border-primary focus:ring-0 outline-none transition-colors rounded"
                   />
                 </div>
-                {viaUrl && (
-                  <div className="flex items-center gap-2 p-3 bg-surface-container border border-border-subtle rounded">
-                    <span className="material-symbols-outlined text-signal-emerald text-[16px]">info</span>
-                    <span className="font-body-sm text-on-surface-variant">GitHub URL cloning is fully supported! Enter a public repository HTTPS URL to analyze it on our Render cluster.</span>
-                  </div>
-                )}
               </form>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="card-base">
-                <div className="font-label-caps text-label-caps text-text-muted mb-1">SUPPORTED</div>
-                <div className="font-code-sm text-on-surface">.py · .js · .ts · .jsx · .tsx · .go · .rs</div>
-              </div>
-              <div className="card-base">
-                <div className="font-label-caps text-label-caps text-text-muted mb-1">ANALYZES</div>
-                <div className="font-code-sm text-on-surface">structure · risk · evolution · knowledge</div>
-              </div>
-              <div className="card-base">
-                <div className="font-label-caps text-label-caps text-text-muted mb-1">PRIVACY</div>
-                <div className="font-code-sm text-on-surface">runs locally · no upload</div>
-              </div>
             </div>
           </div>
         </div>
@@ -133,7 +126,7 @@ export default function SelectRepository() {
         <div className="px-8 h-row-height-standard bg-surface-container-low border-t border-border-subtle flex items-center justify-between z-10">
           <div className="flex items-center gap-3 text-text-muted font-body-sm">
             <span className="material-symbols-outlined text-[16px]">info</span>
-            <span>{path.trim() ? '1 repository selected.' : 'No repository selected yet.'}</span>
+            <span>{path.trim() ? 'Ready to fetch information.' : 'No repository selected yet.'}</span>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -148,8 +141,8 @@ export default function SelectRepository() {
             >
               Skip
             </button>
-            <button onClick={next} disabled={!path.trim()} className="bg-primary hover:bg-primary-container text-on-primary px-6 h-8 font-body-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-              Next: Configure
+            <button onClick={next} disabled={!path.trim() || loadingInfo} className="bg-primary hover:bg-primary-container text-on-primary px-6 h-8 font-body-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              {loadingInfo ? 'Fetching...' : 'Next: Branches'}
               <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
             </button>
           </div>

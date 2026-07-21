@@ -7,8 +7,11 @@ const NAV = [
   { to: '/graph', label: 'Graph Workspace', icon: 'account_tree' },
   { to: '/intelligence', label: 'Intelligence Center', icon: 'psychology' },
   { to: '/risk', label: 'Risk Center', icon: 'security' },
+  { to: '/predictive', label: 'Predictive Analytics', icon: 'troubleshoot' },
   { to: '/knowledge', label: 'Knowledge Map', icon: 'menu_book' },
   { to: '/evolution', label: 'Evolution Timeline', icon: 'query_stats' },
+  { to: '/flow-journeys', label: 'Flow & Journeys', icon: '3d_rotation' },
+  { to: '/documentation', label: 'Documentation Hub', icon: 'book_4' },
 ];
 
 const HEATMAPS = [
@@ -29,6 +32,7 @@ const SECONDARY = [
   { to: '/cross-repo', label: 'Cross-Repo', icon: 'compare' },
   { to: '/reviews', label: 'Code Reviews', icon: 'rate_review' },
   { to: '/refactoring', label: 'Refactoring Pipeline', icon: 'construction' },
+  { to: '/refactoring-suite', label: 'Refactoring Suite', icon: 'auto_fix_high' },
   { to: '/notifications', label: 'Notifications', icon: 'notifications' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
   { to: '/api-docs', label: 'API Docs', icon: 'description' },

@@ -26,6 +26,12 @@ class RootCauseRequest(BaseModel):
     issue_type: str
     target: str
 
+def _safe_int(val, default=0):
+    try:
+        return int(float(val)) if val is not None else default
+    except (ValueError, TypeError):
+        return default
+
 def _load_graphs():
     store_path = _get_store_path()
     ev_path = _get_ev_path()
@@ -50,11 +56,11 @@ def get_evidence_retrieval(query: Optional[str] = None):
     
     if query:
         q = query.lower()
-        evidences = [e for e in evidences if q in (e.type + e.value_json).lower()]
+        evidences = [e for e in evidences if q in (e.type + (e.value or "")).lower()]
         
     return {
         "count": len(evidences),
-        "evidence": [{"type": e.type, "file": e.file_path, "value": json.loads(e.value_json)} for e in evidences[:100]]
+        "evidence": [{"type": e.type, "file": e.file_path, "value": json.loads(e.value) if e.value else {}} for e in evidences[:100]]
     }
 
 # --- PART 2: Repository Q&A ---
@@ -70,7 +76,7 @@ def ask_repository(req: AskRequest):
             matching_entities.append(e)
             
     # Rank by complexity or importance
-    matching_entities.sort(key=lambda x: x.properties.get("complexity", 0), reverse=True)
+    matching_entities.sort(key=lambda x: int(x.properties.get("complexity", 0) or 0), reverse=True)
     
     if not matching_entities:
         return {
@@ -124,9 +130,9 @@ def explain_code(uid: Optional[str] = None, file_path: Optional[str] = None):
         "dependencies": deps,
         "dependents": dependents,
         "metrics": target.properties,
-        "risks": [e.value_json for e in evidences if e.file_path == target.file_path and "risk" in e.type],
-        "history": [json.loads(h.value_json) for h in history] if history else [],
-        "recommendations": ["Refactor if complexity > 15"] if target.properties.get("complexity", 0) > 15 else []
+        "risks": [e.value for e in evidences if e.file_path == target.file_path and "risk" in e.type],
+        "history": [json.loads(h.value) for h in history if h.value] if history else [],
+        "recommendations": ["Refactor if complexity > 15"] if _safe_int(target.properties.get("complexity")) > 15 else []
     }
 
 @router.get("/explain/architecture")
@@ -156,15 +162,15 @@ def get_recommendations():
     recs = []
     
     for e in graph.entities:
-        comp = e.properties.get("complexity", 0)
-        loc = e.properties.get("loc", 0)
+        comp = _safe_int(e.properties.get("complexity"))
+        loc = _safe_int(e.properties.get("loc"))
         if comp > 15 or loc > 300:
             deps = len([r for r in graph.relations if r.source_uid == e.uid])
             
             recs.append({
                 "title": f"Split {e.kind} {e.name}",
                 "reason": f"Complexity = {comp}, LOC = {loc}, Dependencies = {deps}",
-                "confidence": min(99, int(comp * 3)),
+                "confidence": min(99, comp * 3),
                 "expected_impact": {
                     "complexity": "-30%",
                     "maintainability": "+15%"

@@ -67,6 +67,7 @@ def analyze_risks(
                 with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
                     lines = f.readlines()
             except Exception:
+                logger.warning("Failed to read file %s for risk analysis", abs_path)
                 lines = []
                 
             # Line by line checks
@@ -170,7 +171,7 @@ def analyze_risks(
                                 "description": "Qs version contains known prototype pollution vulnerability."
                             })
                 except Exception:
-                    pass
+                    logger.debug("Failed to parse package.json for dependency vulnerabilities")
 
     top_risk_indicators = []
 

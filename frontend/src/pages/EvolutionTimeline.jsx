@@ -22,8 +22,25 @@ const CAT_COLOR = {
 };
 
 export default function EvolutionTimeline() {
-  const { data } = useAnalysis();
+  const { data, loading, error } = useAnalysis();
   const ev = data?.evolution;
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20">
+        <div className="w-10 h-10 border-4 border-surface-container-high border-t-primary rounded-full animate-spin" />
+        <p className="text-on-surface-variant font-body-md">Analyzing evolution data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 p-6">
+        <div className="text-signal-rose card-base p-5 border border-signal-rose/30 bg-signal-rose/5 text-xs font-semibold">{error}</div>
+      </div>
+    );
+  }
 
   if (!ev) {
     return (

@@ -54,7 +54,7 @@ def _count_visible_files(root: str) -> int:
             dirnames[:] = [d for d in dirnames if d != ".git"]
             count += len(filenames)
     except OSError:
-        pass
+        logger.debug("Failed to count visible files in %s", root)
     return count
 
 

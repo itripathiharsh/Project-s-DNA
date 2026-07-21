@@ -49,16 +49,20 @@ export default function Dashboard() {
 
   // Fetch all advanced data
   const fetchAdvancedData = async () => {
-    if (!analysisData) return;
+    if (!analysisData) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
+      const timeout = (ms) => new Promise((_, r) => setTimeout(() => r(new Error("timeout")), ms));
       const [scores, github, smells, security, perf] = await Promise.all([
-        getAdvancedScores(),
-        getAdvancedGithubMetrics(),
-        getAdvancedCodeSmells(),
-        getAdvancedSecurityReport(),
-        getAdvancedPerformanceHotpaths()
+        Promise.race([getAdvancedScores(), timeout(15000)]),
+        Promise.race([getAdvancedGithubMetrics(), timeout(15000)]),
+        Promise.race([getAdvancedCodeSmells(), timeout(15000)]),
+        Promise.race([getAdvancedSecurityReport(), timeout(15000)]),
+        Promise.race([getAdvancedPerformanceHotpaths(), timeout(15000)])
       ]);
       setScoresData(scores);
       setGithubData(github);

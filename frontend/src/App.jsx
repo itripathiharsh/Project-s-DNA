@@ -49,6 +49,7 @@ const OrganizationAdmin = React.lazy(() => import('./pages/OrganizationAdmin'));
 const ApiDocs = React.lazy(() => import('./pages/ApiDocs'));
 const WindowOrchestration = React.lazy(() => import('./pages/WindowOrchestration'));
 const SideBySideDiff = React.lazy(() => import('./pages/SideBySideDiff'));
+const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 const LoadingFallback = () => (
   <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -115,7 +116,9 @@ export default function App() {
                 <Route path="/api-docs" element={<ApiDocs />} />
                 <Route path="/orchestration" element={<WindowOrchestration />} />
                 <Route path="/diff" element={<SideBySideDiff />} />
+                <Route path="*" element={<NotFound />} />
               </Route>
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

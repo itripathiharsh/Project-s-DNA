@@ -1,11 +1,14 @@
 import json
 import uuid
+import logging
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from dna.models import Evidence
 from dna.storage.db import get_db_session, EvidenceModel
+
+logger = logging.getLogger("dna.evidence.store")
 
 _SCHEMA_SQL_V1 = """
 CREATE TABLE IF NOT EXISTS evidence (
@@ -25,15 +28,15 @@ class EvidenceStore:
         self._session = None
         self._tx_depth = 0
         self._transaction = None
+        self._legacy_conns = []
 
     @property
     def _conn(self):
         import sqlite3
-        conn = sqlite3.connect(self.db_path or "dna_production.db")
-        if not hasattr(self, "_legacy_conns"):
-            self._legacy_conns = []
-        self._legacy_conns.append(conn)
-        return conn
+        if not self._legacy_conns:
+            conn = sqlite3.connect(self.db_path or "dna_production.db")
+            self._legacy_conns.append(conn)
+        return self._legacy_conns[0]
 
     def open(self) -> None:
         import os
@@ -41,26 +44,27 @@ class EvidenceStore:
             try:
                 import sqlite3
                 conn = sqlite3.connect(self.db_path)
-                cursor = conn.cursor()
-                cursor.execute("PRAGMA table_info(evidence)")
-                cols = [c[1] for c in cursor.fetchall()]
-                if cols and "confidence" not in cols:
-                    cursor.execute("ALTER TABLE evidence ADD COLUMN confidence REAL DEFAULT 1.0")
-                    cursor.execute("PRAGMA user_version = 2")
-                    conn.commit()
-                conn.close()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute("PRAGMA table_info(evidence)")
+                    cols = [c[1] for c in cursor.fetchall()]
+                    if cols and "confidence" not in cols:
+                        cursor.execute("ALTER TABLE evidence ADD COLUMN confidence REAL DEFAULT 1.0")
+                        cursor.execute("PRAGMA user_version = 2")
+                        conn.commit()
+                finally:
+                    conn.close()
             except Exception:
-                pass
+                logger.warning("Failed to migrate evidence schema (ALTER TABLE)")
         self._session = get_db_session(self.db_path)
 
     def close(self) -> None:
-        if hasattr(self, "_legacy_conns"):
-            for conn in self._legacy_conns:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-            self._legacy_conns.clear()
+        for conn in self._legacy_conns:
+            try:
+                conn.close()
+            except Exception:
+                logger.warning("Failed to close legacy SQLite connection")
+        self._legacy_conns.clear()
         if self._session:
             self._session.close()
             self._session = None
@@ -74,7 +78,7 @@ class EvidenceStore:
                 try:
                     _engines[db_path_or_url].dispose()
                 except Exception:
-                    pass
+                    logger.warning("Failed to dispose engine for %s", db_path_or_url)
                 del _engines[db_path_or_url]
             if db_path_or_url in _sessions:
                 del _sessions[db_path_or_url]
