@@ -35,10 +35,18 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei', 'react-force-graph-3d'],
-          'vendor-motion': ['framer-motion', 'gsap'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('three') || id.includes('@react-three') || id.includes('react-force-graph-3d')) {
+              return 'vendor-three';
+            }
+            if (id.includes('framer-motion') || id.includes('gsap')) {
+              return 'vendor-motion';
+            }
+          }
         },
       },
     },
